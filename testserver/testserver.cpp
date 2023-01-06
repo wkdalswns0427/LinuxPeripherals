@@ -11,10 +11,13 @@
 #include <string>
 #include <typeinfo>
 #include "data.h"
+#include "crc.h"
  #define ARRAY_LEN(a) (sizeof(a) / sizeof((a)[0]))
 
 using namespace std;
- 
+
+u16 crc16_ccitt(const char *buf, int len);
+
 int main(int argc, char *argv[])
 {   
     unsigned int port;
@@ -84,12 +87,25 @@ int main(int argc, char *argv[])
     close(listening);
     //--------------------------------------------------------------------------------------------------
     char buf[4096];
+    u16 CRC;
+    u8 CRC_H, CRC_L;
  
     while (true)
     {
         memset(buf, 0, 4096);
         // Wait for client to send data
-        send(clientSocket, CU2KIOSK_INIT, sizeof(CU2KIOSK_INIT), 0);
+        //-------- make usable dummy ----------
+        char INITCRC[sizeof(CU2KIOSK_INIT-4)];
+        int len = sizeof(CU2KIOSK_INIT);
+        for(int i = 0; i < len-4; i++){
+            INITCRC[i] = CU2KIOSK_INIT[i+1];
+        }
+        CRC = crc16_ccitt(INITCRC, len-4);
+        CRC_H = (CRC>>8);CRC_L = (CRC & 0xFF);
+        CU2KIOSK_INIT[len-3] = CRC_H; CU2KIOSK_INIT[len-2] = CRC_L;
+        //-------------------------------------
+
+        send(clientSocket, CU2KIOSK_INIT, len, 0);
         int bytesReceived = recv(clientSocket, buf, 4096, 0);
 
         if (bytesReceived == -1)
@@ -108,12 +124,23 @@ int main(int argc, char *argv[])
         for(int i=0; i<bytesReceived; ++i)
             std::cout << std::hex << " " << (int)buf[i];
         cout<< "" <<endl;
+        
         if(buf[3]==0x11){
             cout << "INIT ACK" << endl;
             break;
         }
     }
 
+    //-------- make usable dummy ----------
+    char OBUCRC[sizeof(CU2KIOSK_OBUINFO-4)];
+    int OBUlen = sizeof(CU2KIOSK_OBUINFO);
+    for(int i = 0; i < OBUlen-4; i++){
+        OBUCRC[i] = CU2KIOSK_OBUINFO[i+1];
+    }
+    CRC = crc16_ccitt(OBUCRC, OBUlen-4);
+    CRC_H = (CRC>>8);CRC_L = (CRC & 0xFF);
+    CU2KIOSK_OBUINFO[OBUlen-3] = CRC_H; CU2KIOSK_OBUINFO[OBUlen-2] = CRC_L;
+    //-------------------------------------
     send(clientSocket, CU2KIOSK_OBUINFO, sizeof(CU2KIOSK_OBUINFO), 0);
     for(int i = 0; i < 3; i++){
         int bytesReceived = recv(clientSocket, buf, 4096, 0);
@@ -143,4 +170,13 @@ int main(int argc, char *argv[])
     close(clientSocket);
  
     return 0;
+}
+
+u16 crc16_ccitt(const char *buf, int len)
+{
+    register int counter;
+    register u16 crc = 0;
+    for( counter = 0; counter < len; counter++)
+    crc = (crc<<8) ^ crc16tab[((crc>>8) ^ *(char *)buf++)&0x00FF];
+    return crc;
 }
