@@ -11,7 +11,7 @@
 #include <string>
 #include <typeinfo>
 #include "data.h"
-#define ARRAY_LEN(a) (sizeof(a) / sizeof((a)[0]))
+ #define ARRAY_LEN(a) (sizeof(a) / sizeof((a)[0]))
 
 using namespace std;
  
@@ -133,6 +133,7 @@ int main(int argc, char *argv[])
         for(int i=0; i<bytesReceived; ++i)
             std::cout << std::hex << " " << (int)buf[i];
         cout<< "" <<endl;
+        
         if(buf[3]==0xA0){
             cout << "DATA ACK" << endl;
         }

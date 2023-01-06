@@ -13,13 +13,17 @@
 #include "config.h"
 #include <typeinfo>
 #include <time.h>
+#include <bitset>
+#include <cstdio>
+#include <ctime>
 
 using namespace std;
 
 void printUsage(char *arg);
 void getSysTime(char *sysdate, size_t buffersize);
 u16 crc16_ccitt(const void *buf, int len);
-char makeACK(char *buf);
+void makeACK(char *buf, int len, char *ACK);
+char decodeAES128(char *buf);
 
 int main( int argc, char *argv[])
 {   
@@ -64,18 +68,12 @@ int main( int argc, char *argv[])
 
     //	While loop:
     char buf[4096];
-    char date[50];
+    char ACK[50];
     string userInput;
 
     //dummy ACK
     u8 DUMMY_ACK[] = {0x02, 0x00, 0x01, 0x11, 0x00, 0x00, 0x06, 0x11, 0x03};
     u8 DUMMY_ACK2[] = {0x02, 0x00, 0x01, 0xA0, 0x00, 0x00, 0x06, 0x11, 0x03};
-
-    // make date info 
-    /*
-    getSysTime(date, sizeof(date));
-    printf("%s\n", date);
-    */
 
     while(true){
         memset(buf, 0, 4096);
@@ -90,7 +88,8 @@ int main( int argc, char *argv[])
             for(int i=0; i<bytesReceived; ++i)
                 std::cout << std::hex << " " << (int)buf[i];
             cout<< "" <<endl;
-            makeACK(buf);
+
+            makeACK(buf, bytesReceived, ACK);
 
             if((int)buf[3]==16){
                 cout<<"INIT"<<endl;
@@ -116,16 +115,15 @@ int main( int argc, char *argv[])
             cout<< "" <<endl;
 
             if(buf[3]==0x20){
+                makeACK(buf, bytesReceived, ACK);
                 cout<<"OBU"<<endl;
-                send(sock, DUMMY_ACK2, sizeof(DUMMY_ACK2), 0);
+                send(sock, ACK, sizeof(DUMMY_ACK2), 0);
             }
         }
-
     }
 
     //	Close the socket
     close(sock);
-
     return 0;
 }
 
@@ -144,25 +142,70 @@ u16 crc16_ccitt(const char *buf, int len)
     return crc;
 }
 
-char makeACK(char *buf)
+void getSysTime(char *buf){
+    std::time_t rawtime;
+    std::tm* timeinfo;
+
+    std::time(&rawtime);
+    timeinfo = std::localtime(&rawtime);
+
+    std::strftime(buf, 50,"%Y%m%d%H%M%S", timeinfo);
+    std::puts(buf);
+
+}
+
+void makeACK(char *buf, int len, char *ACK)
 {   
-    char ACK[9];
     u16 CRC;
     u8 CRC_H, CRC_L;
+    char time[50];
 
+    // ACk for INIT packet
     if(buf[3]==0x10){
-        // ACk for INIT packet
-        char CRCSET[5] = {buf[1], buf[2], buf[3], buf[4], buf[5]};
+        //CRC check : verify
+        char CRCSET[len - 4] = {buf[1], buf[2], buf[3], buf[4], buf[5]};
         CRC = crc16_ccitt(CRCSET, sizeof(CRCSET));
-        std::cout<<std::hex<<CRC<<" "<<sizeof(CRC)<<endl;;
+        CRC_H = (CRC>>8);CRC_L = (CRC & 0xFF);
 
-        CRC_H = (CRC>>8);
-        CRC_L = CRC & 0xFFFF;
-        std::cout<<std::hex<<CRC_H<<" "<<CRC_L<<endl;;
+        if((CRC_H == buf[-3])&&(CRC_L==buf[-2])){
+            // if CRC is verified, generate one for return ACK
+            CRCSET[2] = 0x11;
+            CRC = crc16_ccitt(CRCSET, sizeof(CRCSET));
+            CRC_H = (CRC>>8);CRC_L = (CRC & 0xFF);
+        }
+        // generate ACK message
+
     }
+
+    // ACK for OBU info packet
     else if(buf[3]==0x20){
-        // ACK for OBU info packet
+        //CRC check : verify
+        char CRCSET[len - 4];
+        for(int i = 0; i<(len-4); i++){
+            CRCSET[i] = buf[i+1];
+        }
+        CRC = crc16_ccitt(CRCSET, sizeof(CRCSET));
+        CRC_H = (CRC>>8); CRC_L = (CRC & 0xFF);
+        printf("%d , %d, bytes : %d\n", CRC_H, CRC_L, len);
+
+        if((CRC_H == buf[len-3])&&(CRC_L==buf[len-2])){
+            // if CRC is verified, generate one for return ACK
+            CRCSET[2] = 0xa0;
+            CRC = crc16_ccitt(CRCSET, sizeof(CRCSET));
+            CRC_H = (CRC>>8);CRC_L = (CRC & 0xFF);
+        }
+        
+        // return ACK 
+        ACK[0] = 0x02;
+        for(int i = 0; i<6; i++){
+            ACK[i+1] = CRCSET[i];
+        }
+        ACK[6] = CRC_H; ACK[7] = CRC_L; ACK[8] = 0x03;
     }
     
-    return *ACK;
+}
+
+char decodeAES128(char *buf){
+
+    return 0;
 }
