@@ -51,9 +51,6 @@ int main( int argc, char *argv[])
     {
         return 1;
     }
-
-    //	Create a hint structure for the server we're connecting with
-    
     string ipAddress = argv[1];
 
     sockaddr_in hint;
