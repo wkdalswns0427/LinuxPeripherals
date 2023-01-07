@@ -1,8 +1,8 @@
 /* "structures.h" defines the look-up tables and KeyExpansion function 
  * used in encrypt.cpp and decrypt.cpp
  */
-#ifndef STRUCTURES_H
-#define STRUCTURES_H
+#ifndef _STRUCTURES_HPP_
+#define _STRUCTURES_HPP_
 
 // Encryption: Forward Rijndael S-box 
 unsigned char s[256] =
