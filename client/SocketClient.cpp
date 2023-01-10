@@ -28,8 +28,10 @@ using namespace std;
 void printUsage(char *arg);
 void getSysTime(uint8_t *buf);
 u16 crc16_ccitt(const void *buf, int len);
-void makeACK(char *buf, int len, char *ACK,  int returnlen);
-void decodeAES128(char *buf);
+void makeACK(char *buf, int len, char *ACK,  int returnlen, int err);
+char* decodeAES128(char *buf);
+
+uint8_t errcnt = 0;
 
 int main( int argc, char *argv[])
 {   
@@ -70,14 +72,16 @@ int main( int argc, char *argv[])
     }
     //--------------------------------------------------------------------------------------------------------
 
-    //	Buffers!!!
-    char buf[50];
-    char ACK[50];
+    //---------------------------------------------- Buffers!!! ----------------------------------------------
+    char buf[50] = {0,};
+    char ACK[20] = {0,};
+    char NACK[10] = {0,};
+    char* decrypted_buf;
+    //--------------------------------------------------------------------------------------------------------
 
     //----------------------------------------- Initial Process Once -----------------------------------------
     while(true){
-        memset(buf, 0, 4096);
-        int bytesReceived = recv(sock, buf, 4096, 0);
+        int bytesReceived = recv(sock, buf, 50, 0);
         if (bytesReceived == -1)
         {
             cout << "There was an error getting response from server\r\n";
@@ -103,8 +107,14 @@ int main( int argc, char *argv[])
 
     //------------------------------------------- Receive Data Loop ------------------------------------------
     while(true){
-        // memset(buf, 0, 4096);
-        int bytesReceived = recv(sock, buf, 4096, 0);
+        if(errcnt > 5){
+            break;
+        }
+
+        memset(buf, 0, 50);
+        memset(ACK, 0, 20);
+        int bytesReceived = recv(sock, buf, 50, 0);
+
         if (bytesReceived == -1)
         {
             cout << "There was an error getting response from server\r\n";
@@ -118,18 +128,31 @@ int main( int argc, char *argv[])
 
             if(buf[3]==0x20){
                 makeACK(buf, bytesReceived, ACK, DATA_ACK_SIZE);
-                cout <<"CLIENT RECV ACK> ";
+                cout <<"CLIENT SEND ACK> ";
                 for(int i=0; i<DATA_ACK_SIZE; ++i)
                     std::cout << std::hex << " " << (int)ACK[i];
                 cout<< "" <<endl;
 
-                decodeAES128(buf);
+                decrypted_buf = decodeAES128(buf);
                 cout <<"CLIENT RECV OBU DECODED> ";
-                for(int i=0; i<bytesReceived; ++i)
-                    std::cout << std::hex << " " << (int)buf[i];
+                for(int i=0; i<16; ++i)
+                    std::cout << std::hex << " " << (int)decrypted_buf[i];
                 cout<< "" <<endl;
                 
-                send(sock, ACK, DATA_ACK_SIZE, 0);
+                int ret = send(sock, ACK, DATA_ACK_SIZE, 0);
+                if(ret<0){
+                    errcnt++;
+                    cout <<"!!! Send Failed Retry !!!"<<endl;
+                    send(sock, ACK, DATA_ACK_SIZE, 0);
+                }
+            }
+            else{
+                errcnt++;
+                cout <<"!!! Invalid OpCode !!!"<<endl;
+                memset(NACK, 0, 10);
+                makeACK(buf, bytesReceived, NACK, DATA_ACK_SIZE, -1);
+                send(sock, NACK, DATA_ACK_SIZE, 0)
+                continue;
             }
         }
     }
@@ -167,11 +190,27 @@ void getSysTime(uint8_t *buf){
     buf[6] = (lt->tm_sec);    
 }
 
-void makeACK(char *buf, int len, char *ACK, int returnlen)
+void makeACK(char *buf, int len, char *ACK, int returnlen, int err = 0)
 {   
     u16 CRC;
     u8 CRC_H, CRC_L;
-    uint8_t time[7];
+    uint8_t time[7] = {0,};
+
+    // NACK
+    if(err != 0){
+        char outCRCSET[5];
+        outCRCSET[0] = buf[1]; outCRCSET[1] = buf[2]; outCRCSET[3] = 0xa1;
+        outCRCSET[4] = 0x00; outCRCSET[5] = 0x00;
+        CRC = crc16_ccitt(outCRCSET, sizeof(outCRCSET));
+        CRC_H = (CRC>>8);CRC_L = (CRC & 0xFF);
+
+        ACK[0] = 0x02;
+        for(int i = 0; i<5; i++){
+            ACK[i+1] = outCRCSET[i];
+        }
+        ACK[returnlen-3] = CRC_H; ACK[returnlen-2] = CRC_L; ACK[returnlen-1] = 0x03;
+        return;
+    }
 
     // ACk for INIT packet
     if(buf[3]==0x10){
@@ -341,8 +380,9 @@ void AESDecrypt(unsigned char * encryptedMessage, unsigned char * expandedKey, u
 	}
 }
 
-void decodeAES128(char *buf){
+char* decodeAES128(char *buf){
     unsigned char * encryptedBuf = new unsigned char[16];
+    static char debuf[16];
     for(int i = 0; i<16; i++){
         encryptedBuf[i] = buf[6+i];
     }
@@ -382,19 +422,9 @@ void decodeAES128(char *buf){
 		AESDecrypt(encryptedBuf + i, expandedKey, decryptedMessage + i);
 	}
 
-	// cout << "Decrypted message in hex:" << endl;
-	// for (int i = 0; i < messageLen; i++) {
-	// 	cout << hex << (int)decryptedMessage[i];
-	// 	cout << " ";
-	// }
-	// cout << endl;
-	// cout << "Decrypted message: ";
-	// for (int i = 0; i < messageLen; i++) {
-	// 	cout << decryptedMessage[i];
-	// }
-	// cout << endl;
-
     for (int i = 0; i < messageLen; i++) {
-		buf[6+i] = decryptedMessage[i];
+		debuf[i] = decryptedMessage[i];
 	}
+
+    return debuf;
 }
