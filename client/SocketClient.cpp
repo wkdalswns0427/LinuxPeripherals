@@ -16,9 +16,10 @@
 #include <bitset>
 #include <cstdio>
 #include <ctime>
-#include "crc.h"
-#include "config.h"
-#include "structures.h"
+#include "../src/config.h"
+#include "../src/crc.h"
+#include "../src/structures.h"
+#include "../src/AES128.h"
 
 using namespace std;
 
@@ -28,7 +29,7 @@ using namespace std;
 void printUsage(char *arg);
 void getSysTime(uint8_t *buf);
 u16 crc16_ccitt(const void *buf, int len);
-void makeACK(char *buf, int len, char *ACK,  int returnlen, int err);
+void makeACK(char *buf, int len, char *ACK,  int returnlen, int err = 0);
 char* decodeAES128(char *buf);
 
 uint8_t errcnt = 0;
@@ -151,10 +152,11 @@ int main( int argc, char *argv[])
                 cout <<"!!! Invalid OpCode !!!"<<endl;
                 memset(NACK, 0, 10);
                 makeACK(buf, bytesReceived, NACK, DATA_ACK_SIZE, -1);
-                send(sock, NACK, DATA_ACK_SIZE, 0)
+                send(sock, NACK, DATA_ACK_SIZE, 0);
                 continue;
             }
         }
+        cout << "----------------------------------------" << endl;
     }
     //--------------------------------------------------------------------------------------------------------
 
@@ -190,7 +192,7 @@ void getSysTime(uint8_t *buf){
     buf[6] = (lt->tm_sec);    
 }
 
-void makeACK(char *buf, int len, char *ACK, int returnlen, int err = 0)
+void makeACK(char *buf, int len, char *ACK, int returnlen, int err)
 {   
     u16 CRC;
     u8 CRC_H, CRC_L;
@@ -271,7 +273,8 @@ void makeACK(char *buf, int len, char *ACK, int returnlen, int err = 0)
     
 }
 
-void SubRoundKey(unsigned char * state, unsigned char * roundKey) {
+/*
+void InvSubRoundKey(unsigned char * state, unsigned char * roundKey) {
 	for (int i = 0; i < 16; i++) {
 		state[i] ^= roundKey[i];
 	}
@@ -305,28 +308,28 @@ void InverseMixColumns(unsigned char * state) {
 	}
 }
 
-void ShiftRows(unsigned char * state) {
+void InvShiftRows(unsigned char * state) {
 	unsigned char tmp[16];
 
-	/* Column 1 */
+	// Column 1 
 	tmp[0] = state[0];
 	tmp[1] = state[13];
 	tmp[2] = state[10];
 	tmp[3] = state[7];
 
-	/* Column 2 */
+	// Column 2
 	tmp[4] = state[4];
 	tmp[5] = state[1];
 	tmp[6] = state[14];
 	tmp[7] = state[11];
 
-	/* Column 3 */
+	// Column 3
 	tmp[8] = state[8];
 	tmp[9] = state[5];
 	tmp[10] = state[2];
 	tmp[11] = state[15];
 
-	/* Column 4 */
+	// Column 4
 	tmp[12] = state[12];
 	tmp[13] = state[9];
 	tmp[14] = state[6];
@@ -337,23 +340,23 @@ void ShiftRows(unsigned char * state) {
 	}
 }
 
-void SubBytes(unsigned char * state) {
+void InvSubBytes(unsigned char * state) {
 	for (int i = 0; i < 16; i++) { // Perform substitution to each of the 16 bytes
 		state[i] = inv_s[state[i]];
 	}
 }
 
-void Round(unsigned char * state, unsigned char * key) {
-	SubRoundKey(state, key);
+void InvRound(unsigned char * state, unsigned char * key) {
+	InvSubRoundKey(state, key);
 	InverseMixColumns(state);
-	ShiftRows(state);
-	SubBytes(state);
+	InvShiftRows(state);
+	InvSubBytes(state);
 }
 
-void InitialRound(unsigned char * state, unsigned char * key) {
-	SubRoundKey(state, key);
-	ShiftRows(state);
-	SubBytes(state);
+void InvInitialRound(unsigned char * state, unsigned char * key) {
+	InvSubRoundKey(state, key);
+	InvShiftRows(state);
+	InvSubBytes(state);
 }
 
 void AESDecrypt(unsigned char * encryptedMessage, unsigned char * expandedKey, unsigned char * decryptedMessage)
@@ -364,15 +367,15 @@ void AESDecrypt(unsigned char * encryptedMessage, unsigned char * expandedKey, u
 		state[i] = encryptedMessage[i];
 	}
 
-	InitialRound(state, expandedKey+160);
+	InvInitialRound(state, expandedKey+160);
 
 	int numberOfRounds = 9;
 
 	for (int i = 8; i >= 0; i--) {
-		Round(state, expandedKey + (16 * (i + 1)));
+		InvRound(state, expandedKey + (16 * (i + 1)));
 	}
 
-	SubRoundKey(state, expandedKey); // Final round
+	InvSubRoundKey(state, expandedKey); // Final round
 
 	// Copy decrypted state to buffer
 	for (int i = 0; i < 16; i++) {
@@ -428,3 +431,4 @@ char* decodeAES128(char *buf){
 
     return debuf;
 }
+*/

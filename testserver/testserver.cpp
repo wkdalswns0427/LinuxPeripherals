@@ -12,8 +12,11 @@
 #include <typeinfo>
 #include <chrono>
 #include <thread>
-#include "data.h"
-#include "crc.h"
+#include "../src/data.h"
+#include "../src/config.h"
+#include "../src/crc.h"
+#include "../src/structures.h"
+#include "../src/AES128.h"
  #define ARRAY_LEN(a) (sizeof(a) / sizeof((a)[0]))
 
 using namespace std;
@@ -90,13 +93,13 @@ int main(int argc, char *argv[])
     // Close listening socket
     close(listening);
     //--------------------------------------------------------------------------------------------------
-    char buf[4096];
+    char buf[100];
+    char* encbuf;
     u16 CRC;
     u8 CRC_H, CRC_L;
  
     while (true)
     {
-        memset(buf, 0, 4096);
         // Wait for client to send data
         //-------- make usable dummy ----------
         char INITCRC[sizeof(CU2KIOSK_INIT-4)];
@@ -110,7 +113,7 @@ int main(int argc, char *argv[])
         //-------------------------------------
 
         send(clientSocket, CU2KIOSK_INIT, len, 0);
-        int bytesReceived = recv(clientSocket, buf, 4096, 0);
+        int bytesReceived = recv(clientSocket, buf, 100, 0);
 
         if (bytesReceived == -1)
         {
@@ -124,7 +127,7 @@ int main(int argc, char *argv[])
             break;
         }
 
-        cout <<"SERVER RECV> ";
+        cout <<"SERVER RECV INIT ACK> ";
         for(int i=0; i<bytesReceived; ++i)
             std::cout << std::hex << " " << (int)buf[i];
         cout<< "" <<endl;
@@ -134,9 +137,10 @@ int main(int argc, char *argv[])
             break;
         }
     }
+
     while(true){
         //-------- make usable dummy ----------
-        char OBUCRC[sizeof(CU2KIOSK_OBUINFO-4)];
+        char OBUCRC[sizeof(CU2KIOSK_OBUINFO)-4];
         int OBUlen = sizeof(CU2KIOSK_OBUINFO);
         for(int i = 0; i < OBUlen-4; i++){
             OBUCRC[i] = CU2KIOSK_OBUINFO[i+1];
@@ -146,8 +150,9 @@ int main(int argc, char *argv[])
         CU2KIOSK_OBUINFO[OBUlen-3] = CRC_H; CU2KIOSK_OBUINFO[OBUlen-2] = CRC_L;
         //-------------------------------------
         send(clientSocket, CU2KIOSK_OBUINFO, sizeof(CU2KIOSK_OBUINFO), 0);
+        memset(buf, 0, 100);
         for(int i = 0; i < 3; i++){
-            int bytesReceived = recv(clientSocket, buf, 4096, 0);
+            int bytesReceived = recv(clientSocket, buf, 100, 0);
 
             if (bytesReceived == -1)
             {
@@ -160,7 +165,7 @@ int main(int argc, char *argv[])
                 break;
             }
 
-            cout <<"SERVER RECV V2> ";
+            cout <<"SERVER RECV DATA ACK> ";
             for(int i=0; i<bytesReceived; ++i)
                 std::cout << std::hex << " " << (int)buf[i];
             cout<< "" <<endl;
@@ -169,7 +174,66 @@ int main(int argc, char *argv[])
                 cout << "DATA ACK" << endl;
             }
         }
-        sleep_for(milliseconds(1000));
+        sleep_for(milliseconds(300));
+
+        //---------------------encoded dummy---------------------
+        char * ENCOBU = new char[OBUlen];
+        cout <<"SERVER SEND ENCBUF NO ENC> ";
+        for(int i = 0; i < OBUlen; i++){
+            ENCOBU[i] = CU2KIOSK_OBUINFO[i];
+            std::cout << std::hex << " " << (int)ENCOBU[i];
+        }
+        cout<< "" <<endl;
+
+        encbuf =encodeAES128(ENCOBU);
+        cout <<"SERVER SEND ENCBUF NO CRC> ";
+        for(int i=0; i<OBUlen; ++i)
+            std::cout << std::hex << " " << (int)encbuf[i];
+        cout<< "" <<endl;
+
+        char ENCCRC[OBUlen-4];
+        int ENClen = OBUlen;
+        for(int i = 0; i < ENClen-4; i++){ 
+            ENCCRC[i] = encbuf[i+1];
+        }
+        CRC = crc16_ccitt(ENCCRC, ENClen-4);
+        CRC_H = (CRC>>8);CRC_L = (CRC & 0xFF);
+        encbuf[ENClen-3] = CRC_H; encbuf[ENClen-2] = CRC_L;
+
+        cout <<"SERVER SEND ENCBUF> ";
+        for(int i=0; i<ENClen; ++i)
+            std::cout << std::hex << " " << (int)encbuf[i];
+        cout<< "" <<endl;
+        
+        send(clientSocket, encbuf, OBUlen, 0);
+        memset(buf, 0, 100);
+        for(int i = 0; i < 3; i++){
+            int bytesReceived = recv(clientSocket, buf, 100, 0);
+
+            if (bytesReceived == -1)
+            {
+                cerr << "Error in recv(). Quitting" << endl;
+                break;
+            }
+            if (bytesReceived == 0)
+            {
+                cout << "Client disconnected " << endl;
+                break;
+            }
+
+            cout <<"SERVER RECV DATA ACK> ";
+            for(int i=0; i<bytesReceived; ++i)
+                std::cout << std::hex << " " << (int)buf[i];
+            cout<< "" <<endl;
+            
+            if(buf[3]==0xA0){
+                cout << "DATA ACK" << endl;
+            }
+        }
+        //--------------------------------------------------------------------------
+
+        sleep_for(milliseconds(500));
+        cout << "----------------------------------------" << endl;
     }
  
     // Close the socket
