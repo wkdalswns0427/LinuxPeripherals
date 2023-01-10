@@ -29,7 +29,7 @@ void printUsage(char *arg);
 void getSysTime(uint8_t *buf);
 u16 crc16_ccitt(const void *buf, int len);
 void makeACK(char *buf, int len, char *ACK,  int returnlen);
-char decodeAES128(char *buf);
+void decodeAES128(char *buf);
 
 int main( int argc, char *argv[])
 {   
@@ -71,7 +71,7 @@ int main( int argc, char *argv[])
     //--------------------------------------------------------------------------------------------------------
 
     //	Buffers!!!
-    char buf[4096];
+    char buf[50];
     char ACK[50];
 
     //----------------------------------------- Initial Process Once -----------------------------------------
@@ -112,13 +112,23 @@ int main( int argc, char *argv[])
         else
         {  
             cout <<"CLIENT RECV OBU> ";
-            // Need AES128 decryption here
             for(int i=0; i<bytesReceived; ++i)
                 std::cout << std::hex << " " << (int)buf[i];
             cout<< "" <<endl;
 
             if(buf[3]==0x20){
                 makeACK(buf, bytesReceived, ACK, DATA_ACK_SIZE);
+                cout <<"CLIENT RECV ACK> ";
+                for(int i=0; i<DATA_ACK_SIZE; ++i)
+                    std::cout << std::hex << " " << (int)ACK[i];
+                cout<< "" <<endl;
+
+                decodeAES128(buf);
+                cout <<"CLIENT RECV OBU DECODED> ";
+                for(int i=0; i<bytesReceived; ++i)
+                    std::cout << std::hex << " " << (int)buf[i];
+                cout<< "" <<endl;
+                
                 send(sock, ACK, DATA_ACK_SIZE, 0);
             }
         }
@@ -206,7 +216,7 @@ void makeACK(char *buf, int len, char *ACK, int returnlen)
 
         // if CRC is verified, generate one for return ACK
         if((CRC_H == buf[len-3])&&(CRC_L==buf[len-2])){
-            outCRCSET[0] = CRCSET[1]; outCRCSET[1] = CRCSET[2];
+            outCRCSET[0] = CRCSET[0]; outCRCSET[1] = CRCSET[1];
             outCRCSET[2] = 0xa0; outCRCSET[3] = 0x00; outCRCSET[4] = 0x00; 
             CRC = crc16_ccitt(outCRCSET, sizeof(outCRCSET));
             CRC_H = (CRC>>8);CRC_L = (CRC & 0xFF);
@@ -332,7 +342,7 @@ void AESDecrypt(unsigned char * encryptedMessage, unsigned char * expandedKey, u
 }
 
 void decodeAES128(char *buf){
-    char encryptedBuf[16];
+    unsigned char * encryptedBuf = new unsigned char[16];
     for(int i = 0; i<16; i++){
         encryptedBuf[i] = buf[6+i];
     }
@@ -364,29 +374,27 @@ void decodeAES128(char *buf){
 
 	KeyExpansion(key, expandedKey);
 
-    int messageLen = strlen((const char *)encryptedMessage);
+    int messageLen = 16;
 
 	unsigned char * decryptedMessage = new unsigned char[messageLen];
 
 	for (int i = 0; i < messageLen; i += 16) {
-		AESDecrypt(encryptedMessage + i, expandedKey, decryptedMessage + i);
+		AESDecrypt(encryptedBuf + i, expandedKey, decryptedMessage + i);
 	}
 
-	cout << "Decrypted message in hex:" << endl;
-	for (int i = 0; i < messageLen; i++) {
-		cout << hex << (int)decryptedMessage[i];
-		cout << " ";
-	}
-	cout << endl;
-	cout << "Decrypted message: ";
-	for (int i = 0; i < messageLen; i++) {
-		cout << decryptedMessage[i];
-	}
-	cout << endl;
+	// cout << "Decrypted message in hex:" << endl;
+	// for (int i = 0; i < messageLen; i++) {
+	// 	cout << hex << (int)decryptedMessage[i];
+	// 	cout << " ";
+	// }
+	// cout << endl;
+	// cout << "Decrypted message: ";
+	// for (int i = 0; i < messageLen; i++) {
+	// 	cout << decryptedMessage[i];
+	// }
+	// cout << endl;
 
     for (int i = 0; i < messageLen; i++) {
 		buf[6+i] = decryptedMessage[i];
 	}
-
-    return 0;
 }
