@@ -1,7 +1,18 @@
 # linux-socket
 
-ODROID C4(Ubuntu Mate)
+Ubuntu Mate targeted Linux Socket program
 
-socket communication script
+```
+g++ -o <name> SocketClient.cpp
+g++ -o <name> testserver.cpp
+```
 
-CRC16, AES128 applied
+### Usage
+
+- client
+./name <ip> <port> : port default 12242
+- server
+./name <port> : port default 12242
+
+CRC : CRC 16
+Data Encryption method : custom AES128 format (custom S-Box matrix)
