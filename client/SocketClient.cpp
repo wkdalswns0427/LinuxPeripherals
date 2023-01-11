@@ -32,6 +32,7 @@ u16 crc16_ccitt(const void *buf, int len);
 void makeACK(char *buf, int len, char *ACK,  int returnlen, int err = 0);
 char* decodeAES128(char *buf);
 
+// error count --> program shutdown at 5
 uint8_t errcnt = 0;
 
 int main( int argc, char *argv[])
@@ -97,6 +98,7 @@ int main( int argc, char *argv[])
             if((int)buf[3]==0x10){
                 makeACK(buf, bytesReceived, ACK, INIT_ACK_SIZE);
                 send(sock, ACK, INIT_ACK_SIZE, 0);
+                cout << "------------------ init ------------------" << endl;
                 break;
             }
             else{
@@ -141,12 +143,19 @@ int main( int argc, char *argv[])
                 cout<< "" <<endl;
                 
                 int ret = send(sock, ACK, DATA_ACK_SIZE, 0);
+                
+                // ************************
+                // * send data to DB here *
+                // ************************
+
+                // when failed to send data over socket, errcnt += 1 and retry
                 if(ret<0){
                     errcnt++;
                     cout <<"!!! Send Failed Retry !!!"<<endl;
                     send(sock, ACK, DATA_ACK_SIZE, 0);
                 }
             }
+            // 0x20이 아닌 데이터 입력 시 errcnt += 1, NACK 전송
             else{
                 errcnt++;
                 cout <<"!!! Invalid OpCode !!!"<<endl;
@@ -178,6 +187,7 @@ u16 crc16_ccitt(const char *buf, int len)
     return crc;
 }
 
+// call in system time in yyyyMMddhhmmss format
 void getSysTime(uint8_t *buf){
     time_t t = time(0);
     struct tm* lt = localtime(&t);
@@ -272,163 +282,3 @@ void makeACK(char *buf, int len, char *ACK, int returnlen, int err)
     }
     
 }
-
-/*
-void InvSubRoundKey(unsigned char * state, unsigned char * roundKey) {
-	for (int i = 0; i < 16; i++) {
-		state[i] ^= roundKey[i];
-	}
-}
-
-void InverseMixColumns(unsigned char * state) {
-	unsigned char tmp[16];
-
-	tmp[0] = (unsigned char)mul14[state[0]] ^ mul11[state[1]] ^ mul13[state[2]] ^ mul9[state[3]];
-	tmp[1] = (unsigned char)mul9[state[0]] ^ mul14[state[1]] ^ mul11[state[2]] ^ mul13[state[3]];
-	tmp[2] = (unsigned char)mul13[state[0]] ^ mul9[state[1]] ^ mul14[state[2]] ^ mul11[state[3]];
-	tmp[3] = (unsigned char)mul11[state[0]] ^ mul13[state[1]] ^ mul9[state[2]] ^ mul14[state[3]];
-
-	tmp[4] = (unsigned char)mul14[state[4]] ^ mul11[state[5]] ^ mul13[state[6]] ^ mul9[state[7]];
-	tmp[5] = (unsigned char)mul9[state[4]] ^ mul14[state[5]] ^ mul11[state[6]] ^ mul13[state[7]];
-	tmp[6] = (unsigned char)mul13[state[4]] ^ mul9[state[5]] ^ mul14[state[6]] ^ mul11[state[7]];
-	tmp[7] = (unsigned char)mul11[state[4]] ^ mul13[state[5]] ^ mul9[state[6]] ^ mul14[state[7]];
-
-	tmp[8] = (unsigned char)mul14[state[8]] ^ mul11[state[9]] ^ mul13[state[10]] ^ mul9[state[11]];
-	tmp[9] = (unsigned char)mul9[state[8]] ^ mul14[state[9]] ^ mul11[state[10]] ^ mul13[state[11]];
-	tmp[10] = (unsigned char)mul13[state[8]] ^ mul9[state[9]] ^ mul14[state[10]] ^ mul11[state[11]];
-	tmp[11] = (unsigned char)mul11[state[8]] ^ mul13[state[9]] ^ mul9[state[10]] ^ mul14[state[11]];
-
-	tmp[12] = (unsigned char)mul14[state[12]] ^ mul11[state[13]] ^ mul13[state[14]] ^ mul9[state[15]];
-	tmp[13] = (unsigned char)mul9[state[12]] ^ mul14[state[13]] ^ mul11[state[14]] ^ mul13[state[15]];
-	tmp[14] = (unsigned char)mul13[state[12]] ^ mul9[state[13]] ^ mul14[state[14]] ^ mul11[state[15]];
-	tmp[15] = (unsigned char)mul11[state[12]] ^ mul13[state[13]] ^ mul9[state[14]] ^ mul14[state[15]];
-
-	for (int i = 0; i < 16; i++) {
-		state[i] = tmp[i];
-	}
-}
-
-void InvShiftRows(unsigned char * state) {
-	unsigned char tmp[16];
-
-	// Column 1 
-	tmp[0] = state[0];
-	tmp[1] = state[13];
-	tmp[2] = state[10];
-	tmp[3] = state[7];
-
-	// Column 2
-	tmp[4] = state[4];
-	tmp[5] = state[1];
-	tmp[6] = state[14];
-	tmp[7] = state[11];
-
-	// Column 3
-	tmp[8] = state[8];
-	tmp[9] = state[5];
-	tmp[10] = state[2];
-	tmp[11] = state[15];
-
-	// Column 4
-	tmp[12] = state[12];
-	tmp[13] = state[9];
-	tmp[14] = state[6];
-	tmp[15] = state[3];
-
-	for (int i = 0; i < 16; i++) {
-		state[i] = tmp[i];
-	}
-}
-
-void InvSubBytes(unsigned char * state) {
-	for (int i = 0; i < 16; i++) { // Perform substitution to each of the 16 bytes
-		state[i] = inv_s[state[i]];
-	}
-}
-
-void InvRound(unsigned char * state, unsigned char * key) {
-	InvSubRoundKey(state, key);
-	InverseMixColumns(state);
-	InvShiftRows(state);
-	InvSubBytes(state);
-}
-
-void InvInitialRound(unsigned char * state, unsigned char * key) {
-	InvSubRoundKey(state, key);
-	InvShiftRows(state);
-	InvSubBytes(state);
-}
-
-void AESDecrypt(unsigned char * encryptedMessage, unsigned char * expandedKey, unsigned char * decryptedMessage)
-{
-	unsigned char state[16]; // Stores the first 16 bytes of encrypted message
-
-	for (int i = 0; i < 16; i++) {
-		state[i] = encryptedMessage[i];
-	}
-
-	InvInitialRound(state, expandedKey+160);
-
-	int numberOfRounds = 9;
-
-	for (int i = 8; i >= 0; i--) {
-		InvRound(state, expandedKey + (16 * (i + 1)));
-	}
-
-	InvSubRoundKey(state, expandedKey); // Final round
-
-	// Copy decrypted state to buffer
-	for (int i = 0; i < 16; i++) {
-		decryptedMessage[i] = state[i];
-	}
-}
-
-char* decodeAES128(char *buf){
-    unsigned char * encryptedBuf = new unsigned char[16];
-    static char debuf[16];
-    for(int i = 0; i<16; i++){
-        encryptedBuf[i] = buf[6+i];
-    }
-
-    string keystr;
-	ifstream keyfile;
-	keyfile.open("keyfile", ios::in | ios::binary);
-
-	if (keyfile.is_open())
-	{
-		getline(keyfile, keystr); // The first line of file should be the key
-		cout << "Read in the 128-bit key from keyfile" << endl;
-		keyfile.close();
-	}
-
-	else cout << "Unable to open file";
-
-	istringstream hex_chars_stream(keystr);
-	unsigned char key[16];
-	int i = 0;
-	unsigned int c;
-	while (hex_chars_stream >> hex >> c)
-	{
-		key[i] = c;
-		i++;
-	}
-
-	unsigned char expandedKey[176];
-
-	KeyExpansion(key, expandedKey);
-
-    int messageLen = 16;
-
-	unsigned char * decryptedMessage = new unsigned char[messageLen];
-
-	for (int i = 0; i < messageLen; i += 16) {
-		AESDecrypt(encryptedBuf + i, expandedKey, decryptedMessage + i);
-	}
-
-    for (int i = 0; i < messageLen; i++) {
-		debuf[i] = decryptedMessage[i];
-	}
-
-    return debuf;
-}
-*/
