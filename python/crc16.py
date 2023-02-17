@@ -1,4 +1,3 @@
-#/ 
 
 POLYNOMIAL = 0x1021
 PRESET = 0xFFFF
@@ -38,7 +37,7 @@ crc16tab = [
  0x6e17,0x7e36,0x4e55,0x5e74,0x2e93,0x3eb2,0x0ed1,0x1ef0
  ]
 
-class CRC16:
+class CRC16_CCITTFALSE:
     def _initial(self, c):
         crc = 0
         c = c << 8
@@ -50,14 +49,14 @@ class CRC16:
             c = c << 1
         return crc
 
+
     def _update_crc(self,crc, c):
         cc = c & 0xff
-
         tmp = (crc >> 8) ^ cc
         crc = (crc << 8) ^ crc16tab[tmp & 0xff]
         crc = crc & 0xffff
-
         return crc
+
 
     def crc16bytes(self,data_bytes):
         crc = PRESET
@@ -65,18 +64,43 @@ class CRC16:
             crc = self._update_crc(crc, (byte))
         return hex(crc)
 
+
     def crc16str(self,str):
         crc = PRESET
         for c in str:
             crc = self._update_crc(crc, ord(c))
         return hex(crc)
 
+
     def crc16(self, data):
         crc = PRESET
         for item in data:
             crc = self._update_crc(crc, (item))
-        return hex(crc)
+        return crc
 
-if __name__ == '__main__':
-    crc16cl = CRC16()
-    print(crc16cl.crc16([0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39]))
+    def makeCRC(self, content):
+        l = len(content)
+        crc_sample = content[1:l-3]
+        calc_crc = self.crc16(crc_sample)
+        calc_crc_h = (calc_crc>>8) & 0xff
+        calc_crc_l = calc_crc & 0xff
+        return calc_crc_h, calc_crc_l
+
+
+    def crcVerify(self, content):
+        l = len(content)
+        crc_sample = content[1:l-3]
+        calc_crc = self.crc16(crc_sample)
+        calc_crc_h = (calc_crc>>8) & 0xff
+        calc_crc_l = calc_crc & 0xff
+
+        print("crcH : ", hex(calc_crc_h), "crcL :", hex(calc_crc_l))
+        if calc_crc_h == content[-3] and calc_crc_l == content[-2]:
+            return True
+        else:
+            return False
+
+
+# if __name__ == '__main__':
+#     crc16cl = CRC16_CCITTFALSE()
+#     print(crc16cl.crc16([0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39]))
