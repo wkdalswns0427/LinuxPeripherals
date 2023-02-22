@@ -1,12 +1,13 @@
+
 import base64
 from Crypto import Random
 from Crypto.Cipher import AES
 import keyfile
 
-# encrypt_key and iv data should be in str type (e.g. str_IV = '\x41\x69\x72\x50\x6F\x69\x6E\x74\x48\x69\x70\x61\x73\x73\xFF\xFF')
 encrypt_key = keyfile.str_encrypt_key
 localIV = keyfile.str_IV
 
+# encrypt_key and iv data should be in str type (e.g. str_IV = '\x41\x69\x72\x50\x6F\x69\x6E\x74\x48\x69\x70\x61\x73\x73\xFF\xFF')
 str_dummy = '\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff'
 thisistest = "thisisatest"
 dummy_seq = [0x00, 0x01]
@@ -22,9 +23,10 @@ class AES128Crypto:
 
     def encrypt(self, data, seq):
         data = self.pad(data)
-        encryptIV = self.iv
+        encryptIV = bytearray(self.iv)
         encryptIV[-2] = seq[0]
         encryptIV[-1] = seq[1]
+        encryptIV = bytes(encryptIV)
         
         cipher = AES.new(self.encrypt_key, AES.MODE_CBC, encryptIV)
 
@@ -35,10 +37,10 @@ class AES128Crypto:
     def decrypt(self, data, seq):
         data = base64.b64decode(data)
 
-        # encrypt 에서 작업한 것처럼 첫 16바이트(block_size=BS) 를 잘라 iv를 만들고, 그 뒤를 복호화 하고자 하는 메세지로 잘라 만든다.
-        decryptIV = self.iv
+        decryptIV = bytearray(self.iv)
         decryptIV[-2] = seq[0]
         decryptIV[-1] = seq[1]
+        decryptIV = bytes(decryptIV)
         
         encrypted_msg = data[self.BS:]
         cipher = AES.new(self.encrypt_key, AES.MODE_CBC, decryptIV)
@@ -48,6 +50,7 @@ class AES128Crypto:
 
 if __name__ == "__main__":
     AESagent = AES128Crypto(encrypt_key, localIV)
-    res = AESagent.encrypt(thisistest)
+    print(thisistest)
+    res = AESagent.encrypt(thisistest, dummy_seq)
     print(res)
-    print(AESagent.decrypt(res))
+    print(AESagent.decrypt(res, dummy_seq))
