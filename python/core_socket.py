@@ -27,6 +27,7 @@ def get_YYYYMMddhhmmss():
 
 def socketRead(server_socket):
     crcagent = CRC16_CCITTFALSE()
+    aesagent = aes.AES128Crypto()
     client, addr = server_socket.accept()
 
     while True:
@@ -46,10 +47,11 @@ def socketRead(server_socket):
 
         # check 0x20 command ACK
         elif content[3] == 0x20 and crcagent.crcVerify(content):
-            OBU_DATA = content[6:21]   # OBU 제조번호
-            ISSUE_DATA = content[6:21] # OBU 발급번호
+            SEQ = [content[1], content[2]] # seq data according to datasheet
+            ENCRYPTED_DATA = content[6:21]
+            DECRYPTED_DATA = aesagent.decrypt(ENCRYPTED_DATA, SEQ)
             ########################################
-            ##  DO SOMETHING WITH OBU&ISSUE DATA  ##
+            ####     DO SOMETHING WITH DATA     ####
             ########################################
             Commands.sendACK(server_socket, addr, content)
 
