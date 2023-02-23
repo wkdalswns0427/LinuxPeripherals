@@ -2,7 +2,7 @@
 import base64
 from Crypto import Random
 from Crypto.Cipher import AES
-import keyfile
+import src.keyfile as keyfile
 
 encrypt_key = keyfile.str_encrypt_key
 IV = keyfile.str_IV
