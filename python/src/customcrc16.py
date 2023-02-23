@@ -49,6 +49,18 @@ class CRC16_CCITTFALSE:
                 crc = crc << 1
             c = c << 1
         return crc
+        
+        
+    def hexlist2str(self, list):
+        L = len(list)
+        str_list = []
+        for i in range(L):
+            hexstr = str(hex(list[i])).replace('0x','',1)
+            str_list.append(hexstr)
+        joined_list = r"\x" + r"\x".join(str_list)
+        joined_list = bytes(joined_list, encoding='utf-8')
+
+        return joined_list
 
 
     def _update_crc_CCITTFALSE(self,crc, c):
