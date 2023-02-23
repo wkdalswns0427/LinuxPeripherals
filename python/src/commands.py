@@ -26,7 +26,7 @@ class Commands:
         CORE2CU_ACK[1] = content[1]
         CORE2CU_ACK[2] = content[2]
 
-        crc_h, crc_l = self.crcagent.makeCRC(content)
+        crc_h, crc_l = self.crcagent.makeCRCXMODEM(content)
         CORE2CU_ACK[-3] = crc_h
         CORE2CU_ACK[-2] = crc_l
 
@@ -37,7 +37,7 @@ class Commands:
         CORE2CU_NACK[1] = content[1]
         CORE2CU_NACK[2] = content[2]
 
-        crc_h, crc_l = self.crcagent.makeCRC(content)
+        crc_h, crc_l = self.crcagent.makeCRCXMODEM(content)
         CORE2CU_NACK[-3] = crc_h
         CORE2CU_NACK[-2] = crc_l
 
@@ -52,7 +52,7 @@ class Commands:
             date_component = date[2*i:2*i+2]
             CORE2CU_RESP[i+6] = date_component
         
-        crc_h, crc_l = self.crcagent.makeCRC(content)
+        crc_h, crc_l = self.crcagent.makeCRCXMODEM(content)
         CORE2CU_RESP[-3] = crc_h
         CORE2CU_RESP[-2] = crc_l
 
