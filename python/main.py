@@ -12,13 +12,19 @@ from src.crc16 import CRC16_CCITTFALSE
 ip_addr = '0.0.0.0'
 port = 5051
 
-def socketSetup():
+def socketServerSetup():
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)     
     server_socket.bind((ip_addr, port))
     server_socket.listen(1)
     return server_socket
 
+
+def socketClientSetup():
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.connect(SERVER_ADDR)
+
+    return client_socket
 
 def get_YYYYMMddhhmmss():
     x = dt.datetime.now()
@@ -66,8 +72,10 @@ def socketRead(server_socket):
     print("Closing connection")
     client.close()
 
+    
+def main():
+    client_socket = socketClientSetup()
+    socketRead(client_socket)
 
 if __name__=="__main__":
-    crcagent = CRC16_CCITTFALSE()
-    print(crcagent.crcVerify([0x02, 0x00, 0x01, 0x10, 0x00, 0x00, 0x24, 0xdb, 0x03]))
-    get_YYYYMMddhhmmss()
+    main()
