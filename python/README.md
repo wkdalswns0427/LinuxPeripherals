@@ -1,10 +1,25 @@
-# Hi
+# socket
 
-build command
+Ubuntu Mate targeted Linux Socket program
+
 ```
-docker build -t pythonsocket .
+g++ -o <name> ypassSocketClient.cpp
+g++ -o <name> testserver.cpp
 ```
-run command
+
+### Usage
+
+- client
+./name <ip> <port> : port default 12242
+- server
+./name <port> : port default 12242
+
+---
+need to compile local crc16 package for CRC16-CCTIIXMODEM
+
 ```
-docker run -t -p 5051:5051 --name et --rm pythonsocket
+tar -xzf crc16-0.1.1.tar.gz
+cd crc16-0.1.1
+python setup.py build
+sudo python setup.py install
 ```

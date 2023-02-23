@@ -1,3 +1,4 @@
+import crc16
 
 POLYNOMIAL = 0x1021
 PRESET = 0xFFFF
@@ -50,7 +51,7 @@ class CRC16_CCITTFALSE:
         return crc
 
 
-    def _update_crc(self,crc, c):
+    def _update_crc_CCITTFALSE(self,crc, c):
         cc = c & 0xff
         tmp = (crc >> 8) ^ cc
         crc = (crc << 8) ^ crc16tab[tmp & 0xff]
@@ -58,21 +59,21 @@ class CRC16_CCITTFALSE:
         return crc
 
 
-    def crc16bytes(self,data_bytes):
+    def crc16bytes_CCITTFALSE(self,data_bytes):
         crc = PRESET
         for byte in data_bytes:
             crc = self._update_crc(crc, (byte))
         return hex(crc)
 
 
-    def crc16str(self,str):
+    def crc16str_CCITTFALSE(self,str):
         crc = PRESET
         for c in str:
             crc = self._update_crc(crc, ord(c))
         return hex(crc)
 
 
-    def crc16(self, data):
+    def crc16_CCITTFALSE(self, data):
         crc = PRESET
         for item in data:
             crc = self._update_crc(crc, (item))
@@ -94,6 +95,27 @@ class CRC16_CCITTFALSE:
         calc_crc_h = (calc_crc>>8) & 0xff
         calc_crc_l = calc_crc & 0xff
 
+        print("original")
+        print("crcH : ", hex(content[-3]), "crcL :", hex(content[-2]))
+        print("calculated")
+        print("crcH : ", hex(calc_crc_h), "crcL :", hex(calc_crc_l))
+        if calc_crc_h == content[-3] and calc_crc_l == content[-2]:
+            return True
+        else:
+            return False
+    
+
+    def crcVerifyXMODEM(self, content):
+        l = len(content)
+        crc_sample = content[1:l-3]
+
+        xmodem = crc16.crc16xmodem(crc_sample)
+        calc_crc_h = (xmodem>>8) & 0xff
+        calc_crc_l = xmodem & 0xff
+        
+        print("original")
+        print("crcH : ", hex(content[-3]), "crcL :", hex(content[-2]))
+        print("calculated")
         print("crcH : ", hex(calc_crc_h), "crcL :", hex(calc_crc_l))
         if calc_crc_h == content[-3] and calc_crc_l == content[-2]:
             return True
@@ -103,4 +125,20 @@ class CRC16_CCITTFALSE:
 
 # if __name__ == '__main__':
 #     crc16cl = CRC16_CCITTFALSE()
-#     print(crc16cl.crc16([0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39]))
+#     crc = crc16cl.crc16(b'\x00\xf1\x10\x00\x00')
+#     calc_crc_h = (crc>>8) & 0xff
+#     calc_crc_l = crc & 0xff
+#     print("crcH : ", hex(calc_crc_h), "crcL :", hex(calc_crc_l))
+
+#     data = b'\x00\xf1\x10\x00\x00'
+#     xmodem = crc16.crc16xmodem(data)
+#     calc_crc_h = (xmodem>>8) & 0xff
+#     calc_crc_l = xmodem & 0xff
+#     print("crcH : ", hex(calc_crc_h), "crcL :", hex(calc_crc_l))
+
+
+#     xmodem = crc16.crc16xmodem(b'265051021814426')
+#     print(xmodem)
+#     calc_crc_h = (xmodem>>8) & 0xff
+#     calc_crc_l = xmodem & 0xff
+#     print("crcH : ", hex(calc_crc_h), "crcL :", hex(calc_crc_l))
