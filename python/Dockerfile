@@ -1,7 +1,13 @@
 FROM python:3.9
 
 RUN mkdir /socket
+WORKDIR /socket/
 
-COPY core_socket.py /socket
+COPY ./src/ /socket/src/
+COPY ./requirements.txt /socket
+COPY ./main.py /socket
 
-CMD ["python3", "/socket/core_socket.py"]
+RUN pip3 install -r requirements.txt
+EXPOSE 5051
+
+CMD ["python3", "/socket/main.py"]
