@@ -103,6 +103,14 @@ class CRC16_CCITTFALSE:
             return True
         else:
             return False
+     
+     def makeCRCXMODEM(self, content):
+        l = len(content)
+        crc_sample = content[1:l-3]
+        xmodem = crc16.crc16xmodem(crc_sample)
+        calc_crc_h = (xmodem>>8) & 0xff
+        calc_crc_l = xmodem & 0xff
+        return calc_crc_h, calc_crc_l
     
 
     def crcVerifyXMODEM(self, content):
