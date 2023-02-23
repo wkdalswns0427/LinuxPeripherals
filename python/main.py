@@ -5,8 +5,9 @@
 
 import socket
 import datetime as dt
-from commands import Commands
-from crc16 import CRC16_CCITTFALSE
+from src.commands import Commands
+import src.aes128 as aes
+from src.crc16 import CRC16_CCITTFALSE
 
 ip_addr = '0.0.0.0'
 port = 5051
