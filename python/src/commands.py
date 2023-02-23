@@ -22,7 +22,7 @@ class Commands:
         self.crcagent = CRC16_CCITTFALSE()
 
 
-    def sendACK(self, server_socket, addr, content):
+    def sendACK(self, server_socket, content):
         CORE2CU_ACK[1] = content[1]
         CORE2CU_ACK[2] = content[2]
 
@@ -30,10 +30,10 @@ class Commands:
         CORE2CU_ACK[-3] = crc_h
         CORE2CU_ACK[-2] = crc_l
 
-        server_socket.sendto(bytes(CORE2CU_ACK), addr)
+        server_socket.send(bytes(CORE2CU_ACK))
 
 
-    def sendNACK(self, server_socket, addr, content):
+    def sendNACK(self, server_socket, content):
         CORE2CU_NACK[1] = content[1]
         CORE2CU_NACK[2] = content[2]
 
@@ -41,10 +41,10 @@ class Commands:
         CORE2CU_NACK[-3] = crc_h
         CORE2CU_NACK[-2] = crc_l
 
-        server_socket.sendto(bytes(CORE2CU_NACK), addr)
+        server_socket.send(bytes(CORE2CU_NACK))
 
 
-    def sendCORERESP(self, server_socket, addr, content, date):
+    def sendCORERESP(self, server_socket, content, date):
         CORE2CU_RESP[1] = content[1]
         CORE2CU_RESP[2] = content[2]
 
@@ -56,4 +56,4 @@ class Commands:
         CORE2CU_RESP[-3] = crc_h
         CORE2CU_RESP[-2] = crc_l
 
-        server_socket.sendto(bytes(CORE2CU_RESP), addr)
+        server_socket.send(bytes(CORE2CU_RESP))
