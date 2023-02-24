@@ -54,25 +54,13 @@ class Commands:
         CORE2CU_RESP[1] = content[1]
         CORE2CU_RESP[2] = content[2]
 
-        # self.utils.makeDateList(CORE2CU_RESP, date)
-        # CRC_RESP = self.utils.hexlist2str(CORE2CU_RESP)
-        # crc_h, crc_l = self.crcagent.makeCRCXMODEM(CRC_RESP)
-        # CORE2CU_RESP[-3] = crc_h; CORE2CU_RESP[-2] = crc_l
-        # print("send data list : ",CORE2CU_RESP)
-        # print("send data : ",bytes(CORE2CU_RESP)) 
-        # client_socket.send(bytes(CORE2CU_RESP))
-
         bcdconvert = self.utils.makeBCD()
         for i in range(7):
             CORE2CU_RESP[i+6] = bcdconvert[i]
 
-        print(CORE2CU_RESP)
-        CRC_RESP = self.utils.hexlist2str(CORE2CU_RESP)
-        crc_h, crc_l = self.crcagent.makeCRCXMODEM(CRC_RESP)
+        crc_h, crc_l = self.crcagent.makeCRCXMODEM(bytes(CORE2CU_RESP))
+        print("crcH : ", hex(crc_h), "crcL", hex(crc_l))
         CORE2CU_RESP[-3] = crc_h; CORE2CU_RESP[-2] = crc_l
-        
-        encoded_data = self.utils.list2str_encode(CORE2CU_RESP)
-        print("send data list : ",CORE2CU_RESP)
-        print("send data : ",encoded_data)   
-        
-        client_socket.send(encoded_data)
+        encodedData = bytes(CORE2CU_RESP)
+
+        client_socket.sendall(encodedData)
