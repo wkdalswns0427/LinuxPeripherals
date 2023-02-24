@@ -49,18 +49,6 @@ class CRC16_CCITTFALSE:
                 crc = crc << 1
             c = c << 1
         return crc
-        
-        
-    def hexlist2str(self, list):
-        L = len(list)
-        str_list = []
-        for i in range(L):
-            hexstr = str(hex(list[i])).replace('0x','',1)
-            str_list.append(hexstr)
-        joined_list = r"\x" + r"\x".join(str_list)
-        joined_list = bytes(joined_list, encoding='utf-8')
-
-        return joined_list
 
 
     def _update_crc_CCITTFALSE(self,crc, c):
@@ -107,16 +95,16 @@ class CRC16_CCITTFALSE:
         calc_crc_h = (calc_crc>>8) & 0xff
         calc_crc_l = calc_crc & 0xff
 
-        print("original")
-        print("crcH : ", hex(content[-3]), "crcL :", hex(content[-2]))
-        print("calculated")
-        print("crcH : ", hex(calc_crc_h), "crcL :", hex(calc_crc_l))
+        # print("original")
+        # print("crcH : ", hex(content[-3]), "crcL :", hex(content[-2]))
+        # print("calculated")
+        # print("crcH : ", hex(calc_crc_h), "crcL :", hex(calc_crc_l))
         if calc_crc_h == content[-3] and calc_crc_l == content[-2]:
             return True
         else:
             return False
-     
-     def makeCRCXMODEM(self, content):
+
+    def makeCRCXMODEM(self, content):
         l = len(content)
         crc_sample = content[1:l-3]
         xmodem = crc16.crc16xmodem(crc_sample)
@@ -133,32 +121,8 @@ class CRC16_CCITTFALSE:
         calc_crc_h = (xmodem>>8) & 0xff
         calc_crc_l = xmodem & 0xff
         
-        print("original")
-        print("crcH : ", hex(content[-3]), "crcL :", hex(content[-2]))
-        print("calculated")
-        print("crcH : ", hex(calc_crc_h), "crcL :", hex(calc_crc_l))
         if calc_crc_h == content[-3] and calc_crc_l == content[-2]:
             return True
         else:
             return False
 
-
-# if __name__ == '__main__':
-#     crc16cl = CRC16_CCITTFALSE()
-#     crc = crc16cl.crc16(b'\x00\xf1\x10\x00\x00')
-#     calc_crc_h = (crc>>8) & 0xff
-#     calc_crc_l = crc & 0xff
-#     print("crcH : ", hex(calc_crc_h), "crcL :", hex(calc_crc_l))
-
-#     data = b'\x00\xf1\x10\x00\x00'
-#     xmodem = crc16.crc16xmodem(data)
-#     calc_crc_h = (xmodem>>8) & 0xff
-#     calc_crc_l = xmodem & 0xff
-#     print("crcH : ", hex(calc_crc_h), "crcL :", hex(calc_crc_l))
-
-
-#     xmodem = crc16.crc16xmodem(b'265051021814426')
-#     print(xmodem)
-#     calc_crc_h = (xmodem>>8) & 0xff
-#     calc_crc_l = xmodem & 0xff
-#     print("crcH : ", hex(calc_crc_h), "crcL :", hex(calc_crc_l))

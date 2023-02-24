@@ -28,15 +28,12 @@ def socketClientSetup():
 
     return client_socket
 
-def get_YYYYMMddhhmmss():
-    x = dt.datetime.now()
-    x_format = x.strftime("%Y%m%d%H%M%S")
-    return x_format
 
 
 def socketRead(client_socket):
     crcagent = CRC16_CCITTFALSE()
     aesagent = aes.AES128Crypto()
+    commands = Commands()
     # client, addr = server_socket.accept()
 
     while True:
@@ -48,8 +45,7 @@ def socketRead(client_socket):
         
         # respond to kiosk access request 0x10
         elif content[3] == 0x10 and crcagent.crcVerifyXMODEM(content):
-            date = get_YYYYMMddhhmmss()
-            Commands.sendCORERESP(client_socket, content, date)
+            commands.sendCORERESP(client_socket, content)
 
         # check 0x20 command ACK
         elif content[3] == 0x20 and crcagent.crcVerifyXMODEM(content):
@@ -59,11 +55,11 @@ def socketRead(client_socket):
             ########################################
             ####     DO SOMETHING WITH DATA     ####
             ########################################
-            Commands.sendACK(client_socket, content)
+            commands.sendACK(client_socket, content)
 
         # check 0x20 command NACK
         elif content[3] == 0x20 and not crcagent.crcVerifyXMODEM(content):
-            Commands.sendNACK(client_socket, content)
+            commands.sendNACK(client_socket, content)
 
         else:
             print(content) 
