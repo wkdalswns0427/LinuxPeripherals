@@ -3,6 +3,7 @@ import base64
 from Crypto import Random
 from Crypto.Cipher import AES
 import src.keyfile as keyfile
+from src.utils import utils
 
 encrypt_key = keyfile.str_encrypt_key
 IV = keyfile.str_IV
@@ -11,8 +12,6 @@ IV = keyfile.str_IV
 str_dummy = '\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff'
 thisistest = "this"
 dummy_list = [0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x40]
-
-
 dummy_seq = [0x00, 0x01]
 
 class AES128Crypto:
@@ -23,27 +22,17 @@ class AES128Crypto:
         self.iv = iv
         self.pad = lambda s: bytes(s + (self.BS - len(s) % self.BS) * chr(self.BS - len(s) % self.BS), 'utf-8')
         self.unpad = lambda s: s[0:-ord(s[-1:])]
-        
-    
-    def hexlist2str(self, list):
-        L = len(list)
-        str_list = []
-        for i in range(L):
-            hexstr = str(hex(list[i])).replace('0x','',1)
-            str_list.append(hexstr)
-        joined_list = r"\x" + r"\x".join(str_list)
+        self.utils = utils()
 
-        return joined_list
-
-
+    # not likely to use encrypt function
     def encrypt(self, data, seq):
         if type(data)==list:
-            data = self.hexlist2str(data)
+            data = self.utils.hexlist2str(data)
         elif type(data)==str:
             pass
         else:
             TypeError("Invalid input type")
-            
+        
         data = self.pad(data)
         encryptIV = bytearray(self.iv)
         encryptIV[-2] = seq[0]
@@ -56,6 +45,14 @@ class AES128Crypto:
 
 
     def decrypt(self, data, seq):
+        
+        if type(data)==list:
+            data = self.utils.hexlist2str(data)
+        elif type(data)==str:
+            pass
+        else:
+            TypeError("Invalid input type")
+            
         data = base64.b64decode(data)
 
         decryptIV = bytearray(self.iv)
@@ -78,3 +75,4 @@ if __name__ == "__main__":
     
     dec_res = AESagent.decrypt(enc_res, dummy_seq)
     print(dec_res)
+    print(type(dec_res))
