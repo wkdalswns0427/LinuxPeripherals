@@ -4,10 +4,10 @@ RUN mkdir /socket
 WORKDIR /socket/
 
 COPY ./src/ /socket/src/
-COPY ./requirements.txt /socket
-COPY ./main.py /socket
+COPY ./requirements.txt /socket/
+COPY ./main.py /socket/
 
 RUN pip3 install -r requirements.txt
 EXPOSE 5051
 
-CMD ["python3", "/socket/main.py"]
+CMD ["python3", "-u","/socket/main.py"]
