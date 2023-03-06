@@ -45,25 +45,14 @@ class AES128Crypto:
 
 
     def decrypt(self, data, seq):
-        
-        if type(data)==list:
-            data = self.utils.hexlist2str(data)
-        elif type(data)==str:
-            pass
-        else:
-            TypeError("Invalid input type")
-            
-        data = base64.b64decode(data)
-
+        data = bytes(data)
         decryptIV = bytearray(self.iv)
         decryptIV[-2] = seq[0]
         decryptIV[-1] = seq[1]
         decryptIV = bytes(decryptIV)
-        
-        encrypted_msg = data[self.BS:]
-        cipher = AES.new(self.encrypt_key, AES.MODE_CBC, decryptIV)
-        
-        return self.unpad(cipher.decrypt(encrypted_msg)).decode('utf-8')
+        cipher = AES.new(encrypt_key, AES.MODE_CBC, decryptIV)
+        decrypted_data = cipher.decrypt(data)
+        return decrypted_data
 
 ##############################################################################################################################
 
