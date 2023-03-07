@@ -14,37 +14,47 @@ from src.utils import utils
 encrypt_key = keyfile.str_encrypt_key
 IV = keyfile.str_IV
 
-SERVER_IP = '192.168.11.20'
-SERVER_PORT = 12242
+CU_IP = '192.168.11.20'
+CU_PORT = 12242
 SIZE = 512
+CU_ADDR = (CU_IP, CU_PORT)
+
+SERVER_IP = 'localhost'
+SERVER_PORT = 5050
 SERVER_ADDR = (SERVER_IP, SERVER_PORT)
 
 def socketClientSetup():
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client_socket.connect(SERVER_ADDR)
-
+    client_socket.connect(CU_ADDR)
     return client_socket
 
+def socketServerSetup():
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.bind(SERVER_ADDR)  # 주소 바인딩
+    return server_socket
 
-def socketRead(client_socket):
+
+
+
+def socketRead(client_socket, server_socket):
     crcagent = CRC16_CCITTFALSE()
     aesagent = aes.AES128Crypto(encrypt_key, IV)
     commands = Commands()
     util = utils()
     # client, addr = client_socket.accept()
+    server_socket.listen()
+    android_socket, android_addr = server_socket.accept()
 
     while True:
         content = client_socket.recv(SIZE)
         print("---------------------------------------------------------")
-        print("read data : ", content, "type : ", type(content))
-        print("read data list : ", list(content),  "type : ", type(list(content)[1]))
 
         if len(content) == 0:
             break
         
         # respond to kiosk access request 0x10
         elif content[3] == 0x10 and crcagent.crcVerifyXMODEM(content):
-            commands.sendCORERESP(client_socket=client_socket, content=content)
+            commands.sendCORERESP(client_socket, content)
 
         # check 0xE0 command ACK
         elif content[3] == 0xE0 and crcagent.crcVerifyXMODEM(content):
@@ -53,20 +63,21 @@ def socketRead(client_socket):
             print("SEND ACK : ", ret)
 
             SEQ = [content[1], content[2]]
-            DATA = list(content[6:22]) 
+            OBU_DATA = list(content[6:22])   # OBU 제조번호, 발행번호
 
             print("* * * * * * * * * * * * * * * * * * * * * * * *")
-            decrypted_data = aesagent.decrypt(DATA, SEQ)
-            info = decrypted_data[0:8]
-            issue_info = decrypted_data[8:]
-            info = util.list2str(list(info))
-            issue_info = util.list2str(list(issue_info))
-            print("dec_data : ",info)
+            decrypted_data = aesagent.decrypt(OBU_DATA, SEQ)
+            obu_info = util.list2str(list(decrypted_data[0:8]))
+            issue_info = util.list2str(list(decrypted_data[8:]))
+            print("dec_data_obu : ",obu_info)
             print("dec_data_issue_ : ",issue_info)
             print("* * * * * * * * * * * * * * * * * * * * * * * *")
             
-            ret = util.postdata(info, issue_info)
+            ret = util.postOBUdata(obu_info, issue_info)
             print("POST : ", ret)
+
+            android_socket.sendall(bytes(obu_info,encoding='utf-8'))
+            android_socket.sendall(bytes(issue_info,encoding='utf-8'))
 
         # check 0xE0 command NACK
         elif content[3] == 0xE0 and not crcagent.crcVerifyXMODEM(content):
@@ -78,10 +89,10 @@ def socketRead(client_socket):
             #####  React to INFO DEL REQUESTS  #####
             ########################################
             commands.sendACK(client_socket, content)
-            pass
-            
+
         else:
             SyntaxWarning("Invalid request") 
+            android_socket.close()
             pass
 
     print("Closing connection")
@@ -89,7 +100,8 @@ def socketRead(client_socket):
 
 def main():
     client_socket = socketClientSetup()
-    socketRead(client_socket)
+    server_socket = socketServerSetup()
+    socketRead(client_socket, server_socket)
     
 
 if __name__=="__main__":
