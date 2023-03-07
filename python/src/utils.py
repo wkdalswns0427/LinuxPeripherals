@@ -1,42 +1,32 @@
 import datetime as dt
 import requests
+from src.keyfile import db_url
 
 class utils:
+    def __init__(self):
+        self.i = 10
 
     def get_YYYYMMddhhmmss(self):
         x = dt.datetime.now()
         x_format = x.strftime("%Y%m%d%H%M%S")
         return x_format
-
-    def hexlist2str(self, list):
-        L = len(list)
-        str_list = []
-        for i in range(L):
-            hexstr = str(hex(list[i])).replace('0x','',1)
-            str_list.append(hexstr)
-        joined_list = r"\x" + r"\x".join(str_list)
-        joined_list = bytes(joined_list, encoding='utf-8')
-
-        return joined_list
     
-    def list2str_encode(self, list):
-        L = len(list)
-        str_list = []
-        for i in range(L):
-            hexstr = hex(list[i]).replace('0x','',1)
-            str_list.append(hexstr)
-        joined_list = r"\x" + "".join(str_list)
-        joined_list = bytes(joined_list, encoding='utf-8')
 
-        return joined_list
-    
+    def hexifyList(self, list):
+        length = len(list)
+        hexlist = []
+        for i in range(length):
+            hexlist.append(hex(list[i]))
+        return hexlist
+
+
     def makeDateList(self, list):
         date = self.get_YYYYMMddhhmmss()
         length = len(date)
         for i in range(int(length/2)):
             date_component = date[2*i:2*i+2]      
             list[i+6] = int(date_component)
-
+        
 
     def makeBCD(self):
         date = self.get_YYYYMMddhhmmss()
@@ -49,17 +39,20 @@ class utils:
             BCD.append(date_to_append)
         return BCD
     
-    def postOBUdata(obu_info, issue_info):
-        db_url = 'http://127.0.0.1:8000/{dir}'
-        headers = {'Content-Type':'application/json; charset=utf-8'}
-
+    def postOBUdata(self, obu_info, issue_info):
+        x = dt.datetime.now()
+        cur_dt = x.strftime("%Y-%m-%d %H:%M")
+        header = {'Content-Type':'application/json; charset=utf-8'}
+        
         datas = {
-            'id' : 1,
+            'id' : self.i,
+            'time' : cur_dt,
             'obu_info' : obu_info,
             'issue_info' : issue_info
         }
 
-        response = requests.post(db_url, data=datas, headers=headers)
+        response = requests.post(db_url, json=datas, headers=header)
+        self.i += 1
         return response 
     
     # used at aes128
@@ -73,12 +66,14 @@ class utils:
         return joined_list
     
 
-    def list2str_encode(self, list):
+    def list2str(self, list):
         L = len(list)
         str_list = []
         for i in range(L):
-            hexstr = hex(list[i]).replace('0x','',1)
+            hexstr = hex(list[i]).replace('0x','')
+            if len(hexstr) == 1:
+                hexstr = "0"+hexstr
             str_list.append(hexstr)
-        joined_list = r"\x" + r"\x".join(str_list)
-        joined_list.encode("ascii")
+        joined_list = ''.join(str_list)
         return joined_list
+    
