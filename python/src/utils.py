@@ -39,7 +39,7 @@ class utils:
             BCD.append(date_to_append)
         return BCD
     
-    def postOBUdata(self, obu_info, issue_info):
+    def postdata(self, obu_info, issue_info):
         x = dt.datetime.now()
         cur_dt = x.strftime("%Y-%m-%d %H:%M")
         header = {'Content-Type':'application/json; charset=utf-8'}
