@@ -19,7 +19,7 @@ CU_PORT = 12242
 SIZE = 512
 CU_ADDR = (CU_IP, CU_PORT)
 
-SERVER_IP = 'localhost'
+SERVER_IP = '192.168.11.127'
 SERVER_PORT = 5050
 SERVER_ADDR = (SERVER_IP, SERVER_PORT)
 
@@ -48,6 +48,7 @@ def socketRead(client_socket, server_socket):
     while True:
         content = client_socket.recv(SIZE)
         print("---------------------------------------------------------")
+        print(content)
 
         if len(content) == 0:
             break
@@ -63,21 +64,23 @@ def socketRead(client_socket, server_socket):
             print("SEND ACK : ", ret)
 
             SEQ = [content[1], content[2]]
-            OBU_DATA = list(content[6:22])   # OBU 제조번호, 발행번호
+            DATA = list(content[6:22])   # OBU 제조번호, 발행번호
 
             print("* * * * * * * * * * * * * * * * * * * * * * * *")
-            decrypted_data = aesagent.decrypt(OBU_DATA, SEQ)
-            obu_info = util.list2str(list(decrypted_data[0:8]))
-            issue_info = util.list2str(list(decrypted_data[8:]))
-            print("dec_data_obu : ",obu_info)
-            print("dec_data_issue_ : ",issue_info)
+            decrypted_data = aesagent.decrypt(DATA, SEQ)
+            info = util.list2str(list(decrypted_data[0:8]))
+            issue = util.list2str(list(decrypted_data[8:]))
+            print("dec_data_obu : ",info)
+            print("dec_data_issue_ : ",issue)
             print("* * * * * * * * * * * * * * * * * * * * * * * *")
             
-            ret = util.postOBUdata(obu_info, issue_info)
+            ret = util.postOBUdata(info, issue)
             print("POST : ", ret)
 
-            android_socket.sendall(bytes(obu_info,encoding='utf-8'))
-            android_socket.sendall(bytes(issue_info,encoding='utf-8'))
+            send_data = info + issue
+
+            android_socket.sendall(bytes(send_data,encoding='utf-8'))
+
 
         # check 0xE0 command NACK
         elif content[3] == 0xE0 and not crcagent.crcVerifyXMODEM(content):
@@ -85,9 +88,6 @@ def socketRead(client_socket, server_socket):
             commands.sendNACK(client_socket, content)
         
         elif content[3] == 0xE2 and crcagent.crcVerifyXMODEM(content):
-            ########################################
-            #####  React to INFO DEL REQUESTS  #####
-            ########################################
             commands.sendACK(client_socket, content)
 
         else:
