@@ -1,4 +1,5 @@
 import crc16
+from utils import utils
 
 POLYNOMIAL = 0x1021
 PRESET = 0xFFFF
@@ -62,43 +63,43 @@ class CRC16_CCITTFALSE:
     def crc16bytes_CCITTFALSE(self,data_bytes):
         crc = PRESET
         for byte in data_bytes:
-            crc = self._update_crc(crc, (byte))
+            crc = self._update_crc_CCITTFALSE(crc, (byte))
         return hex(crc)
 
 
     def crc16str_CCITTFALSE(self,str):
         crc = PRESET
         for c in str:
-            crc = self._update_crc(crc, ord(c))
+            crc = self._update_crc_CCITTFALSE(crc, ord(c))
         return hex(crc)
 
 
     def crc16_CCITTFALSE(self, data):
         crc = PRESET
         for item in data:
-            crc = self._update_crc(crc, (item))
-        return crc
+            crc = self._update_crc_CCITTFALSE(crc, (item))
+        calc_crc_h = (crc>>8) & 0xff
+        calc_crc_l = crc & 0xff
+        print("crcH : ", hex(calc_crc_h), "crcL :", hex(calc_crc_l))
+        return calc_crc_h, calc_crc_l
 
     def makeCRC(self, content):
         l = len(content)
         crc_sample = content[1:l-3]
-        calc_crc = self.crc16(crc_sample)
+        calc_crc = self.crc16_CCITTFALSE(crc_sample)
         calc_crc_h = (calc_crc>>8) & 0xff
         calc_crc_l = calc_crc & 0xff
+        print("crcH : ", hex(calc_crc_h), "crcL :", hex(calc_crc_l))
         return calc_crc_h, calc_crc_l
 
 
     def crcVerify(self, content):
         l = len(content)
         crc_sample = content[1:l-3]
-        calc_crc = self.crc16(crc_sample)
+        calc_crc = self.crc16_CCITTFALSE(crc_sample)
         calc_crc_h = (calc_crc>>8) & 0xff
         calc_crc_l = calc_crc & 0xff
 
-        # print("original")
-        # print("crcH : ", hex(content[-3]), "crcL :", hex(content[-2]))
-        # print("calculated")
-        # print("crcH : ", hex(calc_crc_h), "crcL :", hex(calc_crc_l))
         if calc_crc_h == content[-3] and calc_crc_l == content[-2]:
             return True
         else:
@@ -106,7 +107,7 @@ class CRC16_CCITTFALSE:
 
     def makeCRCXMODEM(self, content):
         l = len(content)
-        crc_sample = content[1:l-3]
+        crc_sample = content[1:l-3] # -3 이 맞으나.... -4 해야 crc 자리가
         xmodem = crc16.crc16xmodem(crc_sample)
         calc_crc_h = (xmodem>>8) & 0xff
         calc_crc_l = xmodem & 0xff
@@ -126,3 +127,24 @@ class CRC16_CCITTFALSE:
         else:
             return False
 
+
+
+if __name__=="__main__":
+    util = utils()
+    
+    caca = '00000001151560040000000000000000'
+    data = bytes('\x02\x06\x0f\x11\x00\x07\x20\x23\x02\x24\x18\x22\x32\x0c\xb3\x03',"utf-8")
+    data2 = '\x02\x06\x0f\x11\x00\x07\x20\x23\x02\x24\x18\x22\x32\x0c\xb3\x03'
+    d = b'\x10\xA0\x00\x00\x00\x01\x15\x15\x60\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+    dummy_data = bytes('\x10\xA0\x00\x00\x00\x01\x15\x15\x60\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',"utf-8")
+    dummy_data2 = bytes(data2,"utf-8")
+    
+    mycrc = CRC16_CCITTFALSE()
+    
+    dt = util.str2hexstr(caca)
+    print(dt)
+    print(bytes(dt,'utf-8'))
+    print(list(bytes(dt,'utf-8')))
+    # crc = mycrc.crc16_CCITTFALSE(dt)
+    
+   
