@@ -65,6 +65,11 @@ class utils:
         joined_list = r"\x" + r"\x".join(str_list)
         return joined_list
     
+    def str2hexstr(self, string):
+        intlist = []
+        for i in range(0,15,2):
+            intlist.append(int(string[i:i+2]))
+        return intlist    
 
     def list2str(self, list):
         L = len(list)
