@@ -78,10 +78,7 @@ class CRC16_CCITTFALSE:
         crc = PRESET
         for item in data:
             crc = self._update_crc_CCITTFALSE(crc, (item))
-        calc_crc_h = (crc>>8) & 0xff
-        calc_crc_l = crc & 0xff
-        print("crcH : ", hex(calc_crc_h), "crcL :", hex(calc_crc_l))
-        return calc_crc_h, calc_crc_l
+        return crc
 
     def makeCRC(self, content):
         l = len(content)
@@ -131,20 +128,29 @@ class CRC16_CCITTFALSE:
 
 if __name__=="__main__":
     util = utils()
-    
-    caca = '00000001151560040000000000000000'
-    data = bytes('\x02\x06\x0f\x11\x00\x07\x20\x23\x02\x24\x18\x22\x32\x0c\xb3\x03',"utf-8")
-    data2 = '\x02\x06\x0f\x11\x00\x07\x20\x23\x02\x24\x18\x22\x32\x0c\xb3\x03'
-    d = b'\x10\xA0\x00\x00\x00\x01\x15\x15\x60\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-    dummy_data = bytes('\x10\xA0\x00\x00\x00\x01\x15\x15\x60\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',"utf-8")
-    dummy_data2 = bytes(data2,"utf-8")
-    
     mycrc = CRC16_CCITTFALSE()
     
-    dt = util.str2hexstr(caca)
+    data = '00000001151560040000000000000000'
+    sdata = '\x10\xA0\x00\x00\x00\x01\x15\x15\x60\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+    bdata = b'\x10\xA0\x00\x00\x00\x01\x15\x15\x60\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+    bfdata = bytes('\x10\xA0\x00\x00\x00\x01\x15\x15\x60\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',"utf-8")
+
+    dt = util.str2hexstr(data)
     print(dt)
-    print(bytes(dt,'utf-8'))
-    print(list(bytes(dt,'utf-8')))
+    
+    header = [0x02, 0x10, 0xA0]
+    tail = [0xff,0xff, 0x03]
+    crc_frame = header + dt + tail
+    print(crc_frame)
+    
+    crc_raw = bytes(crc_frame)
+    print(crc_raw, type(crc_raw), type(crc_raw[0]))
+    print("---------")
+    mycrc.makeCRC(crc_raw)
+    
+    
+    # print(bytes(dt,'utf-8'))
+    # print(list(bytes(dt,'utf-8')))
     # crc = mycrc.crc16_CCITTFALSE(dt)
     
    
