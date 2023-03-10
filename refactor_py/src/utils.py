@@ -67,8 +67,9 @@ class utils:
     
     
     def str2hexstr(self, string):
+        L = len(string)-1
         intlist = []
-        for i in range(0,15,2):
+        for i in range(0,L,2):
             intlist.append(int(string[i:i+2]))
         return intlist
 
