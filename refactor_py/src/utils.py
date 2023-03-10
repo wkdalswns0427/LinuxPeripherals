@@ -93,6 +93,8 @@ class utils:
     def readFcsv(self, fd):
         with open(fd, 'r', encoding='utf-8',newline='') as file:
             reader = csv.reader(file)
-        data = reader[-1]
-        
+            for line in reader:
+                data = line
+                print(line)
+        file.close()
         return data
