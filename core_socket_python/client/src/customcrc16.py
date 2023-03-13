@@ -1,5 +1,5 @@
 import crc16
-from utils import utils
+from src.utils import utils
 
 POLYNOMIAL = 0x1021
 PRESET = 0xFFFF
@@ -80,16 +80,16 @@ class CRC16_CCITTFALSE:
             crc = self._update_crc_CCITTFALSE(crc, (item))
         return crc
 
+    # use this to make crc (divide into high, low bytes)
     def makeCRC(self, content):
         l = len(content)
         crc_sample = content[1:l-3]
         calc_crc = self.crc16_CCITTFALSE(crc_sample)
         calc_crc_h = (calc_crc>>8) & 0xff
         calc_crc_l = calc_crc & 0xff
-        print("crcH : ", hex(calc_crc_h), "crcL :", hex(calc_crc_l))
         return calc_crc_h, calc_crc_l
 
-
+    # this one is to verify
     def crcVerify(self, content):
         l = len(content)
         crc_sample = content[1:l-3]
@@ -101,7 +101,8 @@ class CRC16_CCITTFALSE:
             return True
         else:
             return False
-
+        
+    # ----------------------- CRC CCITT XMODEM module ------------------------
     def makeCRCXMODEM(self, content):
         l = len(content)
         crc_sample = content[1:l-3] # -3 이 맞으나.... -4 해야 crc 자리가
@@ -123,34 +124,3 @@ class CRC16_CCITTFALSE:
             return True
         else:
             return False
-
-
-
-if __name__=="__main__":
-    util = utils()
-    mycrc = CRC16_CCITTFALSE()
-    
-    data = '00000001151560040000000000000000'
-    sdata = '\x10\xA0\x00\x00\x00\x01\x15\x15\x60\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-    bdata = b'\x10\xA0\x00\x00\x00\x01\x15\x15\x60\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-    bfdata = bytes('\x10\xA0\x00\x00\x00\x01\x15\x15\x60\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',"utf-8")
-
-    dt = util.str2hexstr(data)
-    print(dt)
-    
-    header = [0x02, 0x10, 0xA0]
-    tail = [0xff,0xff, 0x03]
-    crc_frame = header + dt + tail
-    print(crc_frame)
-    
-    crc_raw = bytes(crc_frame)
-    print(crc_raw, type(crc_raw), type(crc_raw[0]))
-    print("---------")
-    mycrc.makeCRC(crc_raw)
-    
-    
-    # print(bytes(dt,'utf-8'))
-    # print(list(bytes(dt,'utf-8')))
-    # crc = mycrc.crc16_CCITTFALSE(dt)
-    
-   

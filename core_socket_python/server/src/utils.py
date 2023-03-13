@@ -1,25 +1,16 @@
 import datetime as dt
 import requests
+import csv
 from src.keyfile import db_url
 
 class utils:
-    def __init__(self):
-        self.i = 10
 
     def get_YYYYMMddhhmmss(self):
         x = dt.datetime.now()
         x_format = x.strftime("%Y%m%d%H%M%S")
         return x_format
     
-
-    def hexifyList(self, list):
-        length = len(list)
-        hexlist = []
-        for i in range(length):
-            hexlist.append(hex(list[i]))
-        return hexlist
-
-
+    
     def makeDateList(self, list):
         date = self.get_YYYYMMddhhmmss()
         length = len(date)
@@ -27,7 +18,7 @@ class utils:
             date_component = date[2*i:2*i+2]      
             list[i+6] = int(date_component)
         
-
+        
     def makeBCD(self):
         date = self.get_YYYYMMddhhmmss()
         length = len(date)
@@ -39,21 +30,30 @@ class utils:
             BCD.append(date_to_append)
         return BCD
     
-    def postdata(self, obu_info, issue_info):
-        x = dt.datetime.now()
+    
+    def postOBUdata(self, obu_info, issue_info):
+        x = dt.datetime.now() # docker in gmt timeline +9hr
         cur_dt = x.strftime("%Y-%m-%d %H:%M")
         header = {'Content-Type':'application/json; charset=utf-8'}
-        
+
         datas = {
-            'id' : self.i,
+            'id' : 0,
             'time' : cur_dt,
             'obu_info' : obu_info,
             'issue_info' : issue_info
         }
 
         response = requests.post(db_url, json=datas, headers=header)
-        self.i += 1
         return response 
+    
+    
+    def hexifyList(self, list):
+        length = len(list)
+        hexlist = []
+        for i in range(length):
+            hexlist.append(hex(list[i]))
+        return hexlist
+
     
     # used at aes128
     def hexlist2str(self, list):
@@ -65,11 +65,13 @@ class utils:
         joined_list = r"\x" + r"\x".join(str_list)
         return joined_list
     
+    
     def str2hexstr(self, string):
+        L = len(string)-1
         intlist = []
-        for i in range(0,15,2):
+        for i in range(0,L,2):
             intlist.append(int(string[i:i+2]))
-        return intlist    
+        return intlist
 
     def list2str(self, list):
         L = len(list)
@@ -82,3 +84,18 @@ class utils:
         joined_list = ''.join(str_list)
         return joined_list
     
+    
+    def write2csv(self, fd, content : list):
+        with open(fd, 'w', encoding='utf-8', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(content)
+            
+    
+    def readFcsv(self, fd):
+        with open(fd, 'r', encoding='utf-8',newline='') as file:
+            reader = csv.reader(file)
+            for line in reader:
+                data = line
+
+        file.close()
+        return data

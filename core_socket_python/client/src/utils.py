@@ -96,6 +96,5 @@ class utils:
             reader = csv.reader(file)
             for line in reader:
                 data = line
-                print(line)
         file.close()
         return data

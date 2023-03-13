@@ -1,26 +1,28 @@
 import csv
-import socket
+import socket, time
 import datetime as dt
-from src.commands import Commands
-import src.aes128 as aes
 from src.customcrc16 import CRC16_CCITTFALSE
-import src.customcrc16 as crc
 from src.utils import utils
-from src.config import SERVER_ADDR, SERVER_IP, SERVER_PORT, SIZE
+from src.config import SERVER_ADDR,  SIZE
 
-class YpassSocketServer():
+class SocketServer():
     def __init__(self):
         self.util = utils()
         self.crcagent = CRC16_CCITTFALSE()
+        self.previousCRC = [0,0]
     
     def serverConnect(self):
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server_socket.bind(SERVER_ADDR)  # 주소 바인딩
+        self.server_socket.bind(SERVER_ADDR) 
         self.server_socket.listen()
         self.android_socket, self.android_addr = self.server_socket.accept()
-    
+
+    def readData(self):
+        data = self.util.readFcsv("../data.csv")
+
     def makeData(self):
-        data = self.util.readFcsv("./obu_data.csv")
+        time.sleep(0.5)
+        data = self.util.readFcsv("../data.csv")
         data = self.util.str2hexstr(data[1] + data[2])
         output = ''
         
@@ -37,7 +39,7 @@ class YpassSocketServer():
 
             for d in full_data:
                 output = output + str(d) + "!"
-            
+            print(output)
             return bytes(output, 'utf-8')
         else:
             return False
@@ -47,10 +49,11 @@ class YpassSocketServer():
         senddata = self.makeData()
         if senddata != False:
             self.android_socket.sendall(senddata)
+            print("data sent")
 
 
 def main():
-    socketServer = YpassSocketServer()
+    socketServer = SocketServer()
     socketServer.serverConnect()
     while(True):
         socketServer.send2Android()

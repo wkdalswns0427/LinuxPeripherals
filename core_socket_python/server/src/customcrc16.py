@@ -80,16 +80,16 @@ class CRC16_CCITTFALSE:
             crc = self._update_crc_CCITTFALSE(crc, (item))
         return crc
 
+    # use this to make crc (divide into high, low bytes)
     def makeCRC(self, content):
         l = len(content)
         crc_sample = content[1:l-3]
         calc_crc = self.crc16_CCITTFALSE(crc_sample)
         calc_crc_h = (calc_crc>>8) & 0xff
         calc_crc_l = calc_crc & 0xff
-        print("crcH : ", hex(calc_crc_h), "crcL :", hex(calc_crc_l))
         return calc_crc_h, calc_crc_l
 
-
+    # this one is to verify
     def crcVerify(self, content):
         l = len(content)
         crc_sample = content[1:l-3]
@@ -102,49 +102,3 @@ class CRC16_CCITTFALSE:
         else:
             return False
 
-    def makeCRCXMODEM(self, content):
-        l = len(content)
-        crc_sample = content[1:l-3] # -3 이 맞으나.... -4 해야 crc 자리가
-        xmodem = crc16.crc16xmodem(crc_sample)
-        calc_crc_h = (xmodem>>8) & 0xff
-        calc_crc_l = xmodem & 0xff
-        return calc_crc_h, calc_crc_l
-    
-
-    def crcVerifyXMODEM(self, content):
-        l = len(content)
-        crc_sample = content[1:l-3]
-
-        xmodem = crc16.crc16xmodem(crc_sample)
-        calc_crc_h = (xmodem>>8) & 0xff
-        calc_crc_l = xmodem & 0xff
-        
-        if calc_crc_h == content[-3] and calc_crc_l == content[-2]:
-            return True
-        else:
-            return False
-
-
-
-# if __name__=="__main__":
-#     util = utils()
-#     mycrc = CRC16_CCITTFALSE()
-    
-#     data = '00000001151560040000000000000000'
-
-#     dt = util.str2hexstr(data)
-#     print(dt)
-    
-#     header = [0x02, 0x10, 0xA0]
-#     tail = [0xff,0xff, 0x03]
-#     crc_frame = header + dt + tail
-#     print(crc_frame)
-    
-#     crc_raw = bytes(crc_frame)
-#     print(crc_raw, type(crc_raw), type(crc_raw[0]))
-#     print("---------")
-#     crc_h, crc_l = mycrc.makeCRC(crc_raw)
-#     print(type(crc_h))
-    
-
-   
