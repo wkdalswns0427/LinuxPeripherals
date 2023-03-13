@@ -31,7 +31,10 @@ class YpassSocketServer():
         
         full_data = header + data + tail
         
-        return full_data
+        for d in full_data:
+            output = output + str(d) + "!"
+        
+        return bytes(output, 'utf-8')
     
     def send2Android(self):
         
