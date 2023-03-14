@@ -18,12 +18,14 @@ class SocketServer():
         self.android_socket, self.android_addr = self.server_socket.accept()
 
     def readData(self):
-        data = self.util.readFcsv("../data.csv")
+        data = self.util.readFcsv("./obu_data.csv")
+        prevtime = data[0]
+        data = self.util.str2hexstr(data[1] + data[2])
+        return data, prevtime
 
     def makeData(self):
         time.sleep(0.5)
-        data = self.util.readFcsv("../data.csv")
-        data = self.util.str2hexstr(data[1] + data[2])
+        data, prevtime = self.readData()
         output = ''
         
         header = [0x02, 0x10, 0xA0]
@@ -31,7 +33,7 @@ class SocketServer():
         crc_data = bytes( header + data + tail )
         crc_h, crc_l = self.crcagent.makeCRC(crc_data)
 
-        if crc_h != self.previousCRC[0] and crc_l != self.previousCRC[1]:
+        if prevtime != self.lastSentTime:
             self.previousCRC[0], self.previousCRC[1] = crc_h, crc_l
             tail[-3] = crc_h; tail[-2] = crc_l
             
@@ -39,7 +41,8 @@ class SocketServer():
 
             for d in full_data:
                 output = output + str(d) + "!"
-            print(output)
+            print(self.lastSentTime, "/", prevtime, " ... ",output)
+            self.lastSentTime = prevtime
             return bytes(output, 'utf-8')
         else:
             return False
