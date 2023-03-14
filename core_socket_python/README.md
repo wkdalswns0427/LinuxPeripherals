@@ -8,4 +8,4 @@ docker run -p 5050:5050 --network host charsocket
 ```
 Diagram
 
-![diagram](https://user-images.githubusercontent.com/68832065/224877770-c753d387-f14f-445e-9c55-1c5c5a7f3da7.png)
+![diagram](https://user-images.githubusercontent.com/68832065/224920941-cf8094b3-fef7-4a2e-83a5-740a7fafb0a1.png)
