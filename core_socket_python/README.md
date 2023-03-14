@@ -1,9 +1,8 @@
-
 build command
 ```
-docker build -t pythonsocket .
+docker build -t charsocket .
 ```
 run command
 ```
-docker run -t -p 5051:5051 --name et --rm pythonsocket
+docker run -p 5050:5050 --network host charsocket
 ```
