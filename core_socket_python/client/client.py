@@ -56,7 +56,7 @@ def socketRead(client_socket):
             print("POST : ", ret)
             
             writedata = [util.get_YYYYMMddhhmmss(), info, issue_info]
-            util.write2csv("../data.csv", writedata)
+            util.write2csv("./data.csv", writedata)
             
             
 
@@ -67,9 +67,6 @@ def socketRead(client_socket):
             commands.sendNACK(client_socket, content)
         
         elif content[3] == 0xE2 and crcagent.crcVerifyXMODEM(content):
-            ########################################
-            #####  React to INFO DEL REQUESTS  #####
-            ########################################
             commands.sendACK(client_socket, content)
 
         else:
