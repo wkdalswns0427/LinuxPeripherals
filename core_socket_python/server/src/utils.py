@@ -99,3 +99,19 @@ class utils:
 
         file.close()
         return data
+    
+    def makeLen(self, data):
+        abs_length : int = hex(len(data))
+        lenlen = len(abs_length)
+        
+        if lenlen <= 4:
+            if len(abs_length)==3:
+                abs_length = abs_length[0:2] + "0" + abs_length[-1]
+            len_h, len_l = '0x00', abs_length
+            
+        elif 4 < lenlen and lenlen <=6:
+            if len(abs_length)==5:
+                abs_length = abs_length[0:2] + "0" + abs_length[2:]
+            len_h, len_l = abs_length[0:4], '0x'+abs_length[4:]
+            
+        return len_h, len_l
