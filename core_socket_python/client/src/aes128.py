@@ -43,3 +43,28 @@ class AES128Crypto:
         decrypted_data = cipher.decrypt(data)
 
         return decrypted_data
+    
+    def re_encrypt(self, data):
+        data = bytes(data)
+        
+        data = self.pad(data)
+        encryptIV = bytes(local_IV)
+        print("padded : ", data)
+        
+        cipher = AES.new(self.encrypt_key, AES.MODE_CBC, encryptIV)
+
+        # base64.b64encode(encryptIV + cipher.encrypt(data)).decode("utf-8")
+        encoded = base64.b64encode(cipher.encrypt(data))
+        
+        return encoded
+
+    def re_decrypt(self, data):
+        data = bytes(data)
+        data = self.pad(data)
+        decryptIV = bytes(local_IV)
+        cipher = AES.new(self.encrypt_key, AES.MODE_CBC, decryptIV)
+
+        data = base64.b64decode(data)
+        decrypted_data = cipher.decrypt(data)
+
+        return list(decrypted_data)
