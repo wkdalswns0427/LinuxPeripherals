@@ -4,7 +4,7 @@ docker build -t charsocket .
 ```
 run command
 ```
-docker run -p 5050:5050 --network host charsocket
+docker run -t -p 43402:43402 --network host cuclient
 ```
 Diagram
 
