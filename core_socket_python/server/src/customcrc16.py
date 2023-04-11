@@ -1,5 +1,5 @@
 import crc16
-from src.utils import utils
+from utils import utils
 
 POLYNOMIAL = 0x1021
 PRESET = 0xFFFF
@@ -81,7 +81,7 @@ class CRC16_CCITTFALSE:
         return crc
 
     # use this to make crc (divide into high, low bytes)
-    def makeCRC(self, content):
+    def makeCRC(self, content : bytes):
         l = len(content)
         crc_sample = content[1:l-3]
         calc_crc = self.crc16_CCITTFALSE(crc_sample)
@@ -90,7 +90,7 @@ class CRC16_CCITTFALSE:
         return calc_crc_h, calc_crc_l
 
     # this one is to verify
-    def crcVerify(self, content):
+    def crcVerify(self, content : bytes):
         l = len(content)
         crc_sample = content[1:l-3]
         calc_crc = self.crc16_CCITTFALSE(crc_sample)

@@ -1,13 +1,17 @@
 import datetime as dt
 import requests
 import csv
-from src.keyfile import db_url
 
 class utils:
 
     def get_YYYYMMddhhmmss(self):
         x = dt.datetime.now()
         x_format = x.strftime("%Y%m%d%H%M%S")
+        return x_format
+    
+    def get_YYYYMMddhhmm(self):
+        x = dt.datetime.now()
+        x_format = x.strftime("%Y%m%d%H%M")
         return x_format
     
     
@@ -31,20 +35,6 @@ class utils:
         return BCD
     
     
-    def postOBUdata(self, obu_info, issue_info):
-        x = dt.datetime.now() # docker in gmt timeline +9hr
-        cur_dt = x.strftime("%Y-%m-%d %H:%M")
-        header = {'Content-Type':'application/json; charset=utf-8'}
-
-        datas = {
-            'id' : 0,
-            'time' : cur_dt,
-            'obu_info' : obu_info,
-            'issue_info' : issue_info
-        }
-
-        response = requests.post(db_url, json=datas, headers=header)
-        return response 
     
     
     def hexifyList(self, list):
@@ -99,19 +89,3 @@ class utils:
 
         file.close()
         return data
-    
-    def makeLen(self, data):
-        abs_length : int = hex(len(data))
-        lenlen = len(abs_length)
-        
-        if lenlen <= 4:
-            if len(abs_length)==3:
-                abs_length = abs_length[0:2] + "0" + abs_length[-1]
-            len_h, len_l = '0x00', abs_length
-            
-        elif 4 < lenlen and lenlen <=6:
-            if len(abs_length)==5:
-                abs_length = abs_length[0:2] + "0" + abs_length[2:]
-            len_h, len_l = abs_length[0:4], '0x'+abs_length[4:]
-            
-        return len_h, len_l
