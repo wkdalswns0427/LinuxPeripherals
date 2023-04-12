@@ -101,6 +101,12 @@ class CRC16_CCITTFALSE:
             return True
         else:
             return False
+     
+     def makeCRC_CU(self, content : bytes):
+        calc_crc = self.crc16str_CCITTFALSE(content)
+        calc_crc_h = "0x"+calc_crc[2:4]
+        calc_crc_l = "0x"+calc_crc[4:6]
+        return calc_crc_h, calc_crc_l
         
     # ----------------------- CRC CCITT XMODEM module ------------------------
     def makeCRCXMODEM(self, content):
@@ -124,3 +130,4 @@ class CRC16_CCITTFALSE:
             return True
         else:
             return False
+  
