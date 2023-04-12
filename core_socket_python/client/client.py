@@ -54,15 +54,20 @@ def socketRead():
                     info = util.list2str(list(decrypted_data[0:8]))
                     issue_info = util.list2str(list(decrypted_data[8:]))
                     print("dec_data : ",info); print("dec_data_issue_ : ",issue_info)
+                    # re-encryption for stablization
+                    re_enc_obu = str(aesagent.re_encrypt(decrypted_data[0:8]))
+                    re_enc_issue = str(aesagent.re_encrypt(decrypted_data[8:]))
 
                     ret = util.posTdata(info, issue_info)
                     print("POST : ", ret)
 
                     writedata = [util.get_YYYYMMddhhmmss(), info, issue_info]
                     util.write2csv("./data.csv", writedata)
-
-
-
+                    
+                    # must wait for 0xE2 msg
+                    content = client_socket.recv(SIZE)
+                    if content[3] == 0xE2 and crcagent.crcVerifyXMODEM(content):
+                        commands.sendACK(client_socket, content)
 
                 # check 0xE0 command NACK
                 elif content[3] == 0xE0 and not crcagent.crcVerifyXMODEM(content):
