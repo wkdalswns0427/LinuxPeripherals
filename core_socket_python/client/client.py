@@ -9,11 +9,19 @@ import src.aes128 as aes
 from src.customcrc16 import CRC16_CCITTFALSE
 import src.keyfile as keyfile
 from src.utils import utils
-from src.config import CU_ADDR, CU_IP, CU_PORT, SERVER_ADDR, SERVER_IP, SERVER_PORT, SIZE
+from src.config import CU_ADDR, SIZE, URLs, sequenceTimeout
 from interruptingcow import timeout
 
 encrypt_key = keyfile.str_encrypt_key
 IV = keyfile.str_IV
+
+async def websocketconnect(data):
+    async with websockets.connect(URLs.websocket_url) as wsc:
+        await wsc.send(data)
+
+        print("sent data : ", data)
+        # ws.close()
+    return data
 
 def socketClientSetup():
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -27,7 +35,7 @@ def socketRead():
     util = utils()
     client_socket = socketClientSetup()
     try:
-        with timeout(60*5, exception=RuntimeError):
+        with timeout(sequenceTimeout, exception=RuntimeError):
             while True:
                 content = client_socket.recv(SIZE)
                 print("* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *")
@@ -63,6 +71,9 @@ def socketRead():
 
                     writedata = [util.get_YYYYMMddhhmmss(), info, issue_info]
                     util.write2csv("./data.csv", writedata)
+                    
+                    ws_data = 'DATA'+','+'info_1'+','+re_enc_obu+','+'info_2'+','+ re_enc_issue
+                    asyncio.get_event_loop().run_until_complete(websocketconnect(ws_data))
                     
                     # must wait for 0xE2 msg
                     content = client_socket.recv(SIZE)
