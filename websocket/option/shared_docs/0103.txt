@@ -1,0 +1,4 @@
+1,OBU_DATA,obu_info,21352436531,issue_info,3252421
+3,USER_INFO,user_id,franky
+3,CONNECT,START
+1,OBU_DATA,obu_info,b'p4vxZnCF5sqOHKD8JzhPFQ==',issue_info,b'3fM4v3eOHAKFjwFbjT1xbw=='
