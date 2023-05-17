@@ -1,17 +1,16 @@
 import datetime as dt
-# import requests
+import requests
 import csv
+# from src.keyfile import db_api_url
+
+#dummy
+db_api_url = "http://da-core.com"
 
 class utils:
 
     def get_YYYYMMddhhmmss(self):
         x = dt.datetime.now()
         x_format = x.strftime("%Y%m%d%H%M%S")
-        return x_format
-    
-    def get_YYYYMMddhhmm(self):
-        x = dt.datetime.now()
-        x_format = x.strftime("%Y%m%d%H%M")
         return x_format
     
     
@@ -34,7 +33,23 @@ class utils:
             BCD.append(date_to_append)
         return BCD
     
+    
+    def postOBUdata(self, obu_info, issue_info):
+        x = dt.datetime.now() # docker in gmt timeline +9hr
+        cur_dt = x.strftime("%Y-%m-%d %H:%M")
+        header = {'Content-Type':'application/json; charset=utf-8'}
 
+        datas = {
+            'id' : 0,
+            'time' : cur_dt,
+            'obu_info' : obu_info,
+            'issue_info' : issue_info
+        }
+
+        response = requests.post(db_api_url, json=datas, headers=header)
+        return response 
+    
+    
     def hexifyList(self, list):
         length = len(list)
         hexlist = []
@@ -84,6 +99,5 @@ class utils:
             reader = csv.reader(file)
             for line in reader:
                 data = line
-
         file.close()
         return data

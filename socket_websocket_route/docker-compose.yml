@@ -1,0 +1,37 @@
+version: '3.5'
+
+services:
+ 
+  ypass_api-service:
+    container_name: ypass_api-service
+
+    expose:
+      - 8000
+    ports:
+      - 8000:8000
+    restart: unless-stopped
+
+    build: 
+      context: ./websocket_latest
+      dockerfile: ./Dockerfile
+      
+    tty: true
+    volumes:
+      - ./app:/usr/local.////////
+  
+    networks:
+      - ypass_net
+  
+  cu_client:
+    container_name: cu_client
+    build: 
+      context: ./CU_client
+      dockerfile: ./Dockerfile
+
+    networks:
+      - ypass_net
+
+networks:
+  ypass_net:
+    driver: bridge
+    external: true
