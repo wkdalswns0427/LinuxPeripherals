@@ -18,7 +18,7 @@ class SocketServer():
         self.android_socket, self.android_addr = self.server_socket.accept()
 
     def readData(self):
-        data = self.util.readFcsv("./obu_data.csv")
+        data = self.util.readFcsv("./data.csv")
         prevtime = data[0]
         data = self.util.str2hexstr(data[1] + data[2])
         return data, prevtime
