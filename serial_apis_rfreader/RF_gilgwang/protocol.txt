@@ -1,0 +1,19 @@
+//9600 fcc(처음부터 젤끝제외한 ex-or 값)
+//금액=>int 3바이트사용함  hex값으로 함.
+//
+//pc-->pcb
+//ba cmd nn nn nn fcc bb-->설명: ba스타트  cmd(0c:조회 0d:충전)  nn nn nn 데이타(bcd코드금액)  fcc(ex-or) bb끝
+//
+//pc<--pcb (2 data)
+//ca cmd nn nn nn fcc bb-->설명:pc에서 수신된 그대로 응답(데이타가pcb로 잘 전달여부판단목적)
+//ca cmd nn nn nn xx xx xx xx xx xx fcc bb-->설명: ca스타트  cmd(0c:조회 0d:충전)  nn3개 데이타(bcd코드금액)  xx6개(uid) fcc(ex-or) bb끝
+//
+//잔액조회(100원)
+//ba 0c 00 00 00 fcc bb <--ca 0c 00 00 00 fcc bb
+//                      <--ca 0c 00 00 00 00 00 01 00 fcc bb(카드터치시응답)
+//충전100원,잔액200원
+//ba 0d 00 01 00 fcc bb <--ca 0d 00 01 00 fcc bb
+//                      <--ca 0d 00 01 00 00 00 02 00 fcc bb(카드터치시응답)
+//                      <--ca e1 00 01 00 00 00 02 00 fcc bb(카드키틀림)
+//                      <--ca e2 00 01 00 00 00 02 00 fcc bb(카드매장틀림)
+//                      <--ca e3 ff ff ff 00 00 02 00 fcc bb(잔액부족)
